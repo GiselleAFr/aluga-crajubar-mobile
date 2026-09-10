@@ -16,7 +16,7 @@ class LoginLogo extends StatelessWidget {
           ),
           child: ClipOval(
             child: Image.asset(
-              'assets/images/logo.png',
+              'assets/images/logo.png',//logoo
               width: 60,
               height: 60,
               fit: BoxFit.contain,
