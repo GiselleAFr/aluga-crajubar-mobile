@@ -7,6 +7,8 @@ import 'components/login_button.dart';
 import 'components/register_button.dart';
 import 'components/forgot_password.dart';
 
+import '../register/register.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -36,16 +38,22 @@ class _LoginPageState extends State<LoginPage> {
     String email = emailController.text;
     String senha = passwordController.text;
 
-    print('Email: $email');
-    print('Senha: $senha');
+    debugPrint('Email: $email');
+    debugPrint('Senha: $senha');
   }
 
+  // ABRIR TELA DE CADASTRO
   void abrirCadastro() {
-    print('Abrir tela de cadastro');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RegisterPage(),
+      ),
+    );
   }
 
   void recuperarSenha() {
-    print('Recuperar senha');
+    debugPrint('Recuperar senha');
   }
 
   @override
@@ -100,9 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                       esconderSenha
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-
                       size: 17,
-
                       color: Colors.grey,
                     ),
                   ),

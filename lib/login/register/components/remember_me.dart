@@ -4,12 +4,18 @@ class RememberMe extends StatelessWidget {
   final bool value;
   final ValueChanged<bool?> onChanged;
 
-  const RememberMe({super.key, required this.value, required this.onChanged});
+  const RememberMe({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
+    return SizedBox(
+      height: 30,
+      child: Row(
+         children: [
         SizedBox(
           width: 20,
           height: 20,
@@ -33,6 +39,7 @@ class RememberMe extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }

@@ -13,11 +13,9 @@ class MeuApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Meu App',
-
       theme: ThemeData(
         useMaterial3: true,
       ),
-
       home: const LoginPage(),
     );
   }
