@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class LoginButton extends StatelessWidget {
+class SendCodeButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const LoginButton({
+  const SendCodeButton({
     super.key,
     required this.onPressed,
   });
@@ -13,22 +13,23 @@ class LoginButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFA83232),
-          foregroundColor: Colors.white,
-          elevation: 4,
-          shadowColor: Colors.black.withValues(alpha: 0.3),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(
+            color: Color(0xffa83232),
+            width: 2,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
         ),
         child: const Text(
-          'Log In',
+          'Enviar Código',
           style: TextStyle(
+            color: Color(0xffa83232),
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ),

@@ -6,8 +6,8 @@ import 'components/remember_me.dart';
 import 'components/login_button.dart';
 import 'components/register_button.dart';
 import 'components/forgot_password.dart';
-
 import '../register/register.dart';
+import '../recovery/recovery.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -53,7 +53,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void recuperarSenha() {
-    debugPrint('Recuperar senha');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context)=> const RecoveryPage(),
+      )
+    );
   }
 
   @override
