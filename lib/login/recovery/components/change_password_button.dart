@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class LoginButton extends StatelessWidget {
+class ChangePasswordButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const LoginButton({
+  const ChangePasswordButton({
     super.key,
     required this.onPressed,
   });
@@ -25,7 +25,7 @@ class LoginButton extends StatelessWidget {
           ),
         ),
         child: const Text(
-          'Log In',
+          'Alterar Senha',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,

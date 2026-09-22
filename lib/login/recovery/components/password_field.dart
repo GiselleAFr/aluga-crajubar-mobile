@@ -1,23 +1,17 @@
 import 'package:flutter/material.dart';
 
-class RegisterTextField extends StatelessWidget {
-  final String hint;
-  final IconData icon;
+class PasswordField extends StatelessWidget {
+  final String label;
   final TextEditingController controller;
-  final bool senha;
-  final bool mostrarSenha;
-  final VoidCallback? onToggleSenha;
-  final TextInputType? keyboardType;
+  final bool obscureText;
+  final VoidCallback onVisibilityPressed;
 
-  const RegisterTextField({
+  const PasswordField({
     super.key,
-    required this.hint,
-    required this.icon,
+    required this.label,
     required this.controller,
-    this.senha = false,
-    this.mostrarSenha = false,
-    this.onToggleSenha,
-    this.keyboardType,
+    required this.obscureText,
+    required this.onVisibilityPressed,
   });
 
   @override
@@ -38,8 +32,7 @@ class RegisterTextField extends StatelessWidget {
       ),
       child: TextField(
         controller: controller,
-        keyboardType: keyboardType,
-        obscureText: senha && !mostrarSenha,
+        obscureText: obscureText,
         style: const TextStyle(
           fontSize: 16,
           color: Color(0xff555555),
@@ -47,31 +40,29 @@ class RegisterTextField extends StatelessWidget {
         decoration: InputDecoration(
           border: InputBorder.none,
 
-          hintText: hint,
+          hintText: label,
 
           hintStyle: const TextStyle(
             color: Color(0xffc99999),
             fontSize: 14,
           ),
 
-          prefixIcon: Icon(
-            icon,
-            color: const Color(0xffb94b4b),
+          prefixIcon: const Icon(
+            Icons.lock_outline,
+            color: Color(0xffb94b4b),
             size: 18,
           ),
 
-          suffixIcon: senha
-              ? IconButton(
-                  onPressed: onToggleSenha,
-                  icon: Icon(
-                    mostrarSenha
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                    color: const Color(0xffd19b9b),
-                    size: 15,
-                  ),
-                )
-              : null,
+          suffixIcon: IconButton(
+            onPressed: onVisibilityPressed,
+            icon: Icon(
+              obscureText
+                  ? Icons.visibility
+                  : Icons.visibility_off,
+              color: const Color(0xffd19b9b),
+              size: 15,
+            ),
+          ),
 
           contentPadding: const EdgeInsets.symmetric(
             vertical: 14,
