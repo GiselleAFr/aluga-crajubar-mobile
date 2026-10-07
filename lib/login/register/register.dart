@@ -5,6 +5,8 @@ import 'components/register_text_field.dart';
 import 'components/remember_me.dart';
 import 'components/register_button.dart';
 import 'components/return_login.dart';
+import '../session_page.dart';
+import '../../services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -23,6 +25,8 @@ class _RegisterPageState extends State<RegisterPage> {
   bool lembrarMe = true;
   bool mostrarSenha = false;
   bool mostrarConfirmarSenha = false;
+  bool cadastrando = false;
+  final authService = AuthService();
 
   @override
   void dispose() {
@@ -35,36 +39,48 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void cadastrar() {
+  Future<void> cadastrar() async {
     if (nomeController.text.isEmpty ||
         emailController.text.isEmpty ||
         telefoneController.text.isEmpty ||
         senhaController.text.isEmpty ||
         confirmarSenhaController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha todos os campos.'),
-        ),
+        const SnackBar(content: Text('Preencha todos os campos.')),
       );
 
       return;
     }
 
     if (senhaController.text != confirmarSenhaController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('As senhas não coincidem.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('As senhas não coincidem.')));
 
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cadastro realizado com sucesso!'),
-      ),
-    );
+    setState(() => cadastrando = true);
+    try {
+      final user = await authService.register(
+        name: nomeController.text,
+        email: emailController.text,
+        phone: telefoneController.text,
+        password: senhaController.text,
+        passwordConfirmation: confirmarSenhaController.text,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => SessionPage(user: user)),
+        (_) => false,
+      );
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => cadastrando = false);
+    }
   }
 
   @override
@@ -75,9 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 40,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 40),
 
             child: Column(
               children: [
@@ -142,8 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   mostrarSenha: mostrarConfirmarSenha,
                   onToggleSenha: () {
                     setState(() {
-                      mostrarConfirmarSenha =
-                          !mostrarConfirmarSenha;
+                      mostrarConfirmarSenha = !mostrarConfirmarSenha;
                     });
                   },
                 ),
@@ -164,7 +177,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // BOTÃO CADASTRAR
                 RegisterButton(
-                  onPressed: cadastrar,
+                  onPressed: cadastrando ? null : cadastrar,
+                  isLoading: cadastrando,
                 ),
 
                 const SizedBox(height: 20),
@@ -176,7 +190,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
 
                 const SizedBox(height: 20),
-
               ],
             ),
           ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class ChangePasswordButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   const ChangePasswordButton({
     super.key,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   @override
@@ -14,7 +16,7 @@ class ChangePasswordButton extends StatelessWidget {
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFA83232),
           foregroundColor: Colors.white,
@@ -24,13 +26,19 @@ class ChangePasswordButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
           ),
         ),
-        child: const Text(
-          'Alterar Senha',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text(
+                'Alterar Senha',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }

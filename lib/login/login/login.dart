@@ -8,6 +8,8 @@ import 'components/register_button.dart';
 import 'components/forgot_password.dart';
 import '../register/register.dart';
 import '../recovery/recovery.dart';
+import '../session_page.dart';
+import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,14 +19,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController =
-      TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
-  final TextEditingController passwordController =
-      TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool lembrar = true;
   bool esconderSenha = true;
+  bool entrando = false;
+  final authService = AuthService();
 
   @override
   void dispose() {
@@ -34,30 +36,40 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void fazerLogin() {
-    String email = emailController.text;
-    String senha = passwordController.text;
-
-    debugPrint('Email: $email');
-    debugPrint('Senha: $senha');
+  Future<void> fazerLogin() async {
+    if (entrando) return;
+    setState(() => entrando = true);
+    try {
+      final user = await authService.login(
+        email: emailController.text,
+        password: passwordController.text,
+        remember: lembrar,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => SessionPage(user: user)),
+      );
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => entrando = false);
+    }
   }
 
   // ABRIR TELA DE CADASTRO
   void abrirCadastro() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const RegisterPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const RegisterPage()),
     );
   }
 
   void recuperarSenha() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context)=> const RecoveryPage(),
-      )
+      MaterialPageRoute(builder: (context) => const RecoveryPage()),
     );
   }
 
@@ -69,13 +81,10 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 40,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 40),
 
             child: Column(
               children: [
-
                 const SizedBox(height: 45),
 
                 // LOGO + TÍTULO
@@ -88,8 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                   controller: emailController,
                   hint: 'login/e-mail',
                   icon: Icons.mail_outline,
-                  keyboardType:
-                      TextInputType.emailAddress,
+                  keyboardType: TextInputType.emailAddress,
                 ),
 
                 const SizedBox(height: 12),
@@ -104,8 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                   suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
-                        esconderSenha =
-                            !esconderSenha;
+                        esconderSenha = !esconderSenha;
                       });
                     },
 
@@ -136,22 +143,19 @@ class _LoginPageState extends State<LoginPage> {
 
                 // LOGIN
                 LoginButton(
-                  onPressed: fazerLogin,
+                  onPressed: entrando ? null : fazerLogin,
+                  isLoading: entrando,
                 ),
 
                 const SizedBox(height: 10),
 
                 // CADASTRO
-                RegisterButton(
-                  onPressed: abrirCadastro,
-                ),
+                RegisterButton(onPressed: abrirCadastro),
 
                 const SizedBox(height: 13),
 
                 // ESQUECEU SENHA
-                ForgotPassword(
-                  onPressed: recuperarSenha,
-                ),
+                ForgotPassword(onPressed: recuperarSenha),
 
                 const SizedBox(height: 20),
               ],

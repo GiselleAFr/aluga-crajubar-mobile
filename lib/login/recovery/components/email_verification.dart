@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 
-import 'code_field.dart';
 import 'send_code_button.dart';
 
 class EmailVerification extends StatelessWidget {
-  final List<TextEditingController> controllers;
-  final List<FocusNode> focusNodes;
+  final TextEditingController emailController;
   final VoidCallback onSendCode;
+  final bool isLoading;
 
   const EmailVerification({
     super.key,
-    required this.controllers,
-    required this.focusNodes,
+    required this.emailController,
     required this.onSendCode,
+    this.isLoading = false,
   });
 
   @override
@@ -36,46 +35,27 @@ class EmailVerification extends StatelessWidget {
         const SizedBox(height: 8),
 
         const Text(
-          'Para sua segurança, enviaremos um código de verificação '
-          'de 6 dígitos para o seu e-mail cadastrado antes de '
-          'confirmar transações importantes.',
-          style: TextStyle(
-            fontSize: 9,
-            height: 1.4,
+          'Informe seu e-mail cadastrado. Enviaremos um link seguro '
+          'para redefinir sua senha.',
+          style: TextStyle(fontSize: 9, height: 1.4),
+        ),
+
+        const SizedBox(height: 12),
+
+        TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(
+            labelText: 'E-mail',
+            prefixIcon: Icon(Icons.email_outlined),
+            border: OutlineInputBorder(),
           ),
         ),
 
         const SizedBox(height: 12),
 
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            6,
-            (index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 3,
-                ),
-                child: CodeField(
-                  controller: controllers[index],
-                  focusNode: focusNodes[index],
-
-                  nextFocusNode:
-                      index < 5 ? focusNodes[index + 1] : null,
-
-                  previousFocusNode:
-                      index > 0 ? focusNodes[index - 1] : null,
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        SendCodeButton(
-          onPressed: onSendCode,
-        ),
+        SendCodeButton(onPressed: onSendCode, isLoading: isLoading),
       ],
     );
   }

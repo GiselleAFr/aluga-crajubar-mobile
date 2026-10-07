@@ -4,45 +4,35 @@ import 'components/recovery_header.dart';
 import 'components/password_field.dart';
 import 'components/change_password_button.dart';
 import 'components/email_verification.dart';
+import '../../services/auth_service.dart';
 
 class RecoveryPage extends StatefulWidget {
-  const RecoveryPage({
-    super.key,
-  });
+  const RecoveryPage({super.key, this.resetEmail, this.resetToken});
+
+  final String? resetEmail;
+  final String? resetToken;
 
   @override
-  State<RecoveryPage> createState() =>
-      _RecoveryPageState();
+  State<RecoveryPage> createState() => _RecoveryPageState();
 }
 
-class _RecoveryPageState
-  extends State<RecoveryPage> {
-
+class _RecoveryPageState extends State<RecoveryPage> {
   // ==========================================
   // CAMPOS
   // ==========================================
 
-  final novaSenhaController =
-      TextEditingController();
+  final novaSenhaController = TextEditingController();
 
-  final confirmarSenhaController =
-      TextEditingController();
+  final confirmarSenhaController = TextEditingController();
+  final emailController = TextEditingController();
+  final authService = AuthService();
+  bool enviando = false;
 
-
-  // ==========================================
-  // CÓDIGO
-  // ==========================================
-
-  final codigoControllers = List.generate(
-    6,
-    (_) => TextEditingController(),
-  );
-
-  final codigoFocusNodes = List.generate(
-    6,
-    (_) => FocusNode(),
-  );
-
+  @override
+  void initState() {
+    super.initState();
+    emailController.text = widget.resetEmail ?? '';
+  }
 
   // ==========================================
   // MOSTRAR / ESCONDER SENHAS
@@ -54,40 +44,67 @@ class _RecoveryPageState
 
   bool esconderConfirmarSenha = true;
 
-
   // ==========================================
   // BOTÃO ALTERAR SENHA
   // ==========================================
 
-  void alterarSenha() {
-    print('Botão Alterar Senha pressionado');
+  Future<void> alterarSenha() async {
+    if (novaSenhaController.text.length < 8) {
+      _mostrarMensagem('A senha deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    if (novaSenhaController.text != confirmarSenhaController.text) {
+      _mostrarMensagem('As senhas não coincidem.');
+      return;
+    }
 
-  
-
-    print(
-      'Nova senha: ${novaSenhaController.text}',
-    );
-
-    print(
-      'Confirmar senha: ${confirmarSenhaController.text}',
-    );
+    setState(() => enviando = true);
+    try {
+      final message = await authService.resetPassword(
+        email: emailController.text,
+        token: widget.resetToken!,
+        password: novaSenhaController.text,
+        passwordConfirmation: confirmarSenhaController.text,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    } on AuthException catch (error) {
+      _mostrarMensagem(error.message);
+    } finally {
+      if (mounted) setState(() => enviando = false);
+    }
   }
-
 
   // ==========================================
   // BOTÃO ENVIAR CÓDIGO
   // ==========================================
 
-  void enviarCodigo() {
-    String codigo = '';
-
-    for (final controller in codigoControllers) {
-      codigo += controller.text;
+  Future<void> enviarCodigo() async {
+    if (!emailController.text.contains('@')) {
+      _mostrarMensagem('Informe um e-mail válido.');
+      return;
     }
 
-    print('Código: $codigo');
+    setState(() => enviando = true);
+    try {
+      final message = await authService.requestPasswordReset(
+        email: emailController.text,
+      );
+      _mostrarMensagem(message);
+    } on AuthException catch (error) {
+      _mostrarMensagem(error.message);
+    } finally {
+      if (mounted) setState(() => enviando = false);
+    }
   }
 
+  void _mostrarMensagem(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
 
   // ==========================================
   // VOLTAR
@@ -97,29 +114,20 @@ class _RecoveryPageState
     Navigator.pop(context);
   }
 
-
   // ==========================================
   // LIMPAR MEMÓRIA
   // ==========================================
 
   @override
   void dispose() {
-    
     novaSenhaController.dispose();
 
     confirmarSenhaController.dispose();
 
-    for (final controller in codigoControllers) {
-      controller.dispose();
-    }
-
-    for (final focusNode in codigoFocusNodes) {
-      focusNode.dispose();
-    }
+    emailController.dispose();
 
     super.dispose();
   }
-
 
   // ==========================================
   // TELA
@@ -133,24 +141,17 @@ class _RecoveryPageState
       body: SafeArea(
         child: Column(
           children: [
-
             // ================================
             // CABEÇALHO
             // ================================
 
-            RecoveryHeader(
-              onBack: voltar,
-            ),
+            RecoveryHeader(onBack: voltar),
 
-            const Divider(
-              height: 1,
-            ),
-
+            const Divider(height: 1),
 
             // ================================
             // CONTEÚDO
             // ================================
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -159,17 +160,17 @@ class _RecoveryPageState
                 ),
 
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-
                     // ==========================
                     // TÍTULO
                     // ==========================
 
-                    const Text(
-                      'Alterar Senha',
+                    Text(
+                      widget.resetToken == null
+                          ? 'Recuperar Senha'
+                          : 'Alterar Senha',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -179,80 +180,73 @@ class _RecoveryPageState
 
                     const SizedBox(height: 10),
 
-
                     // ==========================
-                    // NOVA SENHA
-                    // ==========================
+                    if (widget.resetToken != null) ...[
+                      // NOVA SENHA
+                      // ==========================
 
-                    PasswordField(
-                      label: 'Nova Senha',
+                      PasswordField(
+                        label: 'Nova Senha',
 
-                      controller:
-                          novaSenhaController,
+                        controller: novaSenhaController,
 
-                      obscureText:
-                          esconderNovaSenha,
+                        obscureText: esconderNovaSenha,
 
-                      onVisibilityPressed: () {
-                        setState(() {
-                          esconderNovaSenha =
-                              !esconderNovaSenha;
-                        });
-                      },
-                    ),
+                        onVisibilityPressed: () {
+                          setState(() {
+                            esconderNovaSenha = !esconderNovaSenha;
+                          });
+                        },
+                      ),
 
-                    const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
+                      // ==========================
+                      // CONFIRMAR SENHA
+                      // ==========================
+                      PasswordField(
+                        label: 'Confirmar Nova Senha',
 
-                    // ==========================
-                    // CONFIRMAR SENHA
-                    // ==========================
+                        controller: confirmarSenhaController,
 
-                    PasswordField(
-                      label: 'Confirmar Nova Senha',
+                        obscureText: esconderConfirmarSenha,
 
-                      controller:
-                          confirmarSenhaController,
+                        onVisibilityPressed: () {
+                          setState(() {
+                            esconderConfirmarSenha = !esconderConfirmarSenha;
+                          });
+                        },
+                      ),
 
-                      obscureText:
-                          esconderConfirmarSenha,
+                      const SizedBox(height: 12),
 
-                      onVisibilityPressed: () {
-                        setState(() {
-                          esconderConfirmarSenha =
-                              !esconderConfirmarSenha;
-                        });
-                      },
-                    ),
+                      // ==========================
+                      // ALTERAR SENHA
+                      // ==========================
+                      ChangePasswordButton(
+                        onPressed: alterarSenha,
+                        isLoading: enviando,
+                      ),
 
-                    const SizedBox(height: 12),
-
-
-                    // ==========================
-                    // ALTERAR SENHA
-                    // ==========================
-
-                    ChangePasswordButton(
-                      onPressed: alterarSenha,
-                    ),
-
-                    const SizedBox(height: 10),
-
+                      const SizedBox(height: 10),
+                    ],
 
                     // ==========================
                     // VERIFICAÇÃO
                     // ==========================
-
-                    EmailVerification(
-                      controllers:
-                          codigoControllers,
-
-                      focusNodes:
-                          codigoFocusNodes,
-
-                      onSendCode:
-                          enviarCodigo,
-                    ),
+                    if (widget.resetToken == null)
+                      EmailVerification(
+                        emailController: emailController,
+                        onSendCode: enviarCodigo,
+                        isLoading: enviando,
+                      )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          'Redefinindo a senha de ${emailController.text}',
+                        ),
+                      ),
                   ],
                 ),
               ),
