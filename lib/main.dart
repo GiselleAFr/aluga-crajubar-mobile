@@ -1,16 +1,18 @@
+
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
+import 'home/home_page.dart';
 import 'login/login/login.dart';
 import 'login/recovery/recovery.dart';
-import 'login/session_page.dart';
 import 'services/auth_service.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MeuApp());
 }
 
@@ -22,27 +24,42 @@ class MeuApp extends StatefulWidget {
 }
 
 class _MeuAppState extends State<MeuApp> {
-  final appLinks = AppLinks();
+  final AppLinks appLinks = AppLinks();
+
   StreamSubscription<Uri>? linkSubscription;
 
   @override
   void initState() {
     super.initState();
-    linkSubscription = appLinks.uriLinkStream.listen(_openResetLink);
+
+    linkSubscription = appLinks.uriLinkStream.listen(
+      _openResetLink,
+      onError: (Object error) {
+        debugPrint('Erro ao receber deep link: $error');
+      },
+    );
   }
 
   void _openResetLink(Uri uri) {
-    final isResetLink =
+    final bool isResetLink =
         uri.scheme == 'alugacrajubar' &&
-        (uri.host == 'reset-password' || uri.path == '/reset-password');
-    final token = uri.queryParameters['token'];
-    final email = uri.queryParameters['email'];
-    if (!isResetLink || token == null || email == null) return;
+        (uri.host == 'reset-password' ||
+            uri.path == '/reset-password');
+
+    final String? token = uri.queryParameters['token'];
+    final String? email = uri.queryParameters['email'];
+
+    if (!isResetLink || token == null || email == null) {
+      return;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       appNavigatorKey.currentState?.push(
         MaterialPageRoute<void>(
-          builder: (_) => RecoveryPage(resetEmail: email, resetToken: token),
+          builder: (_) => RecoveryPage(
+            resetEmail: email,
+            resetToken: token,
+          ),
         ),
       );
     });
@@ -59,8 +76,14 @@ class _MeuAppState extends State<MeuApp> {
     return MaterialApp(
       navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
-      title: 'Meu App',
-      theme: ThemeData(useMaterial3: true),
+      title: 'Aluga Cariri',
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF8F7F5),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF963333),
+        ),
+      ),
       home: const AuthGate(),
     );
   }
@@ -74,14 +97,22 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  final authService = AuthService();
+  final AuthService authService = AuthService();
+
   late Future<AuthUser?> session = _restoreSession();
 
   Future<AuthUser?> _restoreSession() async {
-    if (await authService.accessToken == null) return null;
+    if (await authService.accessToken == null) {
+      return null;
+    }
+
     try {
       return await authService.currentUser();
-    } on AuthException {
+    } on AuthException catch (e) {
+      debugPrint('Não foi possível restaurar a sessão: $e');
+      return null;
+    } catch (e) {
+      debugPrint('Erro inesperado ao restaurar sessão: $e');
       return null;
     }
   }
@@ -93,11 +124,21 @@ class _AuthGateState extends State<AuthGate> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF963333),
+              ),
+            ),
           );
         }
-        final user = snapshot.data;
-        return user == null ? const LoginPage() : SessionPage(user: user);
+
+        final AuthUser? user = snapshot.data;
+
+        if (user == null) {
+          return const LoginPage();
+        }
+
+        return const HomePage();
       },
     );
   }

@@ -37,6 +37,10 @@ class AuthException implements Exception {
 }
 
 class AuthService {
+  static const temporaryLoginEmail = 'demo@alugacrajubar.com';
+  static const temporaryLoginPassword = 'Cariri@2026';
+  static const _demoAccessToken = 'demo-access-token';
+
   AuthService({http.Client? client, FlutterSecureStorage? storage})
     : _client = client ?? http.Client(),
       _storage = storage ?? const FlutterSecureStorage();
@@ -50,6 +54,18 @@ class AuthService {
     required String password,
     required bool remember,
   }) async {
+    // Conta local apenas para demonstrações em builds de debug.
+    if (kDebugMode &&
+        email.trim().toLowerCase() == temporaryLoginEmail &&
+        password == temporaryLoginPassword) {
+      await _storage.write(key: _tokenKey, value: _demoAccessToken);
+      return const AuthUser(
+        id: 0,
+        name: 'Conta de demonstração',
+        email: temporaryLoginEmail,
+      );
+    }
+
     final data = await _request(
       'POST',
       '/auth/login',
@@ -86,6 +102,15 @@ class AuthService {
   }
 
   Future<AuthUser> currentUser() async {
+    final token = await _storage.read(key: _tokenKey);
+    if (token == _demoAccessToken) {
+      return const AuthUser(
+        id: 0,
+        name: 'Conta de demonstração',
+        email: temporaryLoginEmail,
+      );
+    }
+
     final data = await _request('GET', '/auth/me', authenticated: true);
     final user = data['user'];
     if (user is! Map<String, dynamic>) {
@@ -95,6 +120,12 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    final token = await _storage.read(key: _tokenKey);
+    if (token == _demoAccessToken) {
+      await _storage.delete(key: _tokenKey);
+      return;
+    }
+
     try {
       await _request('POST', '/auth/logout', authenticated: true);
     } finally {

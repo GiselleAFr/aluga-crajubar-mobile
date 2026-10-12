@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
 import 'components/login_logo.dart';
@@ -6,9 +7,11 @@ import 'components/remember_me.dart';
 import 'components/login_button.dart';
 import 'components/register_button.dart';
 import 'components/forgot_password.dart';
+
 import '../register/register.dart';
 import '../recovery/recovery.dart';
-import '../session_page.dart';
+
+import '../../home/home_page.dart';
 import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -23,38 +26,63 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController passwordController = TextEditingController();
 
+  final AuthService authService = AuthService();
+
   bool lembrar = true;
   bool esconderSenha = true;
   bool entrando = false;
-  final authService = AuthService();
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
-
     super.dispose();
   }
 
+  // FAZER LOGIN E ABRIR A HOME
   Future<void> fazerLogin() async {
     if (entrando) return;
-    setState(() => entrando = true);
+
+    setState(() {
+      entrando = true;
+    });
+
     try {
-      final user = await authService.login(
-        email: emailController.text,
+      await authService.login(
+        email: emailController.text.trim(),
         password: passwordController.text,
         remember: lembrar,
       );
+
       if (!mounted) return;
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => SessionPage(user: user)),
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => const HomePage()),
       );
     } on AuthException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível realizar o login. Tente novamente.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
-      if (mounted) setState(() => entrando = false);
+      if (mounted) {
+        setState(() {
+          entrando = false;
+        });
+      }
     }
   }
 
@@ -62,14 +90,15 @@ class _LoginPageState extends State<LoginPage> {
   void abrirCadastro() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const RegisterPage()),
+      MaterialPageRoute<void>(builder: (_) => const RegisterPage()),
     );
   }
 
+  // ABRIR TELA DE RECUPERAÇÃO DE SENHA
   void recuperarSenha() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const RecoveryPage()),
+      MaterialPageRoute<void>(builder: (_) => const RecoveryPage()),
     );
   }
 
@@ -77,22 +106,45 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40),
-
             child: Column(
               children: [
                 const SizedBox(height: 45),
 
-                // LOGO + TÍTULO
+                // LOGO E TÍTULO
                 const LoginLogo(),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 28),
 
-                // EMAIL
+                if (kDebugMode) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4E5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Acesso temporário para demonstração',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Text('E-mail: ${AuthService.temporaryLoginEmail}'),
+                        Text('Senha: ${AuthService.temporaryLoginPassword}'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                ] else
+                  const SizedBox(height: 52),
+
+                // CAMPO DE E-MAIL
                 LoginInput(
                   controller: emailController,
                   hint: 'login/e-mail',
@@ -102,20 +154,18 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 12),
 
-                // SENHA
+                // CAMPO DE SENHA
                 LoginInput(
                   controller: passwordController,
                   hint: 'password',
                   icon: Icons.lock_outline,
                   obscureText: esconderSenha,
-
                   suffixIcon: IconButton(
                     onPressed: () {
                       setState(() {
                         esconderSenha = !esconderSenha;
                       });
                     },
-
                     icon: Icon(
                       esconderSenha
                           ? Icons.visibility_outlined
@@ -128,10 +178,9 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 7),
 
-                // LEMBRAR
+                // LEMBRAR LOGIN
                 RememberMe(
                   value: lembrar,
-
                   onChanged: (valor) {
                     setState(() {
                       lembrar = valor ?? false;
@@ -141,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 52),
 
-                // LOGIN
+                // BOTÃO DE LOGIN
                 LoginButton(
                   onPressed: entrando ? null : fazerLogin,
                   isLoading: entrando,
@@ -149,12 +198,12 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 10),
 
-                // CADASTRO
+                // BOTÃO DE CADASTRO
                 RegisterButton(onPressed: abrirCadastro),
 
                 const SizedBox(height: 13),
 
-                // ESQUECEU SENHA
+                // ESQUECI MINHA SENHA
                 ForgotPassword(onPressed: recuperarSenha),
 
                 const SizedBox(height: 20),
