@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../busca/buscar_page.dart';
@@ -6,9 +8,13 @@ import 'components/home_header.dart';
 import 'components/featured_properties.dart';
 import 'components/categories_section.dart';
 import 'components/home_navigation.dart';
+import '../services/auth_service.dart';
+import '../services/property_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.user});
+
+  final AuthUser? user;
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -17,54 +23,80 @@ class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
   int _categoryIndex = 0;
   String _search = '';
-  final _categories = const ['Casas', 'Apartamentos', 'Chalés', 'Fazendas'];
-
-  late final List<Property> _properties = [
-    Property(
-      nome: 'Pousada Pedra Cinzenta',
-      local: 'Juazeiro do Norte',
-      preco: 350,
-      nota: 4.9,
-      categoria: 'Casas',
-      imagem:
-          'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=700',
-    ),
-    Property(
-      nome: 'Quarto Luxuoso - Vista',
-      local: 'Juazeiro do Norte',
-      preco: 180,
-      nota: 4.8,
-      categoria: 'Apartamentos',
-      imagem:
-          'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=700',
-    ),
-    Property(
-      nome: 'Casa de Campo',
-      local: 'Crato, Ceará',
-      preco: 420,
-      nota: 4.9,
-      categoria: 'Fazendas',
-      imagem:
-          'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=700',
-    ),
-    Property(
-      nome: 'Chalé da Serra',
-      local: 'Barbalha, Ceará',
-      preco: 260,
-      nota: 4.7,
-      categoria: 'Chalés',
-      imagem:
-          'https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=700',
-    ),
+  final _categories = const [
+    'Casas',
+    'Apartamentos',
+    'Quartos e pousadas',
+    'Comerciais',
+    'Terrenos',
   ];
+  final _propertyService = PropertyService();
+  final List<Property> _properties = [];
+  Timer? _searchDebounce;
+  int _requestId = 0;
+  bool _loading = true;
+  String? _loadError;
 
-  List<Property> get _filtered => _properties.where((p) {
-    final term = _search.trim().toLowerCase();
-    return p.categoria == _categories[_categoryIndex] &&
-        (term.isEmpty ||
-            p.nome.toLowerCase().contains(term) ||
-            p.local.toLowerCase().contains(term));
-  }).toList();
+  String get _selectedTypes => switch (_categories[_categoryIndex]) {
+    'Casas' => 'casa',
+    'Apartamentos' => 'apartamento',
+    'Quartos e pousadas' => 'quarto,pousada,kitnet',
+    'Comerciais' => 'comercial',
+    'Terrenos' => 'terreno',
+    _ => '',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProperties();
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _propertyService.close();
+    super.dispose();
+  }
+
+  void _loadProperties({bool debounce = false}) {
+    _searchDebounce?.cancel();
+    if (debounce) {
+      _searchDebounce = Timer(
+        const Duration(milliseconds: 350),
+        _fetchProperties,
+      );
+      return;
+    }
+    _fetchProperties();
+  }
+
+  Future<void> _fetchProperties() async {
+    final requestId = ++_requestId;
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final results = await _propertyService.search(
+        query: _search,
+        types: _selectedTypes,
+      );
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _properties
+          ..clear()
+          ..addAll(results);
+        _loading = false;
+      });
+    } on PropertyApiException catch (error) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = error.message;
+        _loading = false;
+      });
+    }
+  }
 
   void _showProperty(Property p) {
     showModalBottomSheet<void>(
@@ -87,7 +119,7 @@ class _HomePageState extends State<HomePage> {
             Text(p.local),
             const SizedBox(height: 12),
             Text(
-              'R\$ ${p.preco} por noite',
+              'R\$ ${p.preco.toStringAsFixed(2).replaceAll('.', ',')} ${p.periodoPreco}',
               style: const TextStyle(
                 color: Color(0xFF963333),
                 fontSize: 17,
@@ -121,8 +153,11 @@ class _HomePageState extends State<HomePage> {
 
   void _selecionarNavegacao(int indice) {
     if (indice == 1) {
-      Navigator.of(context)
-          .push(MaterialPageRoute<void>(builder: (_) => const BuscarPage()));
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BuscarPage(userName: widget.user?.name),
+        ),
+      );
       return;
     }
 
@@ -137,29 +172,60 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           HomeHeader(
-            nomeUsuario: 'Amanda',
-            onBuscaAlterada: (v) => setState(() => _search = v),
+            nomeUsuario: widget.user?.name ?? 'viajante',
+            onBuscaAlterada: (value) {
+              setState(() => _search = value);
+              _loadProperties(debounce: true);
+            },
           ),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FeaturedProperties(
-                    imoveis: _filtered,
-                    onFavoritoPressed: (p) =>
-                        setState(() => p.favorito = !p.favorito),
-                    onReservarPressed: _showProperty,
-                    onVerTodosPressed: () => setState(() {
-                      _categoryIndex = 0;
-                      _search = '';
-                    }),
-                  ),
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Text(_loadError!, textAlign: TextAlign.center),
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _loadProperties,
+                              child: const Text('Tentar novamente'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    FeaturedProperties(
+                      imoveis: _properties,
+                      onFavoritoPressed: (property) => setState(
+                        () => property.favorito = !property.favorito,
+                      ),
+                      onReservarPressed: _showProperty,
+                      onVerTodosPressed: () {
+                        setState(() {
+                          _categoryIndex = 0;
+                          _search = '';
+                        });
+                        _loadProperties();
+                      },
+                    ),
                   CategoriesSection(
                     categorias: _categories,
                     categoriaSelecionada: _categoryIndex,
-                    onCategoriaSelecionada: (i) =>
-                        setState(() => _categoryIndex = i),
+                    onCategoriaSelecionada: (index) {
+                      setState(() => _categoryIndex = index);
+                      _loadProperties();
+                    },
                   ),
                   const SizedBox(height: 24),
                 ],

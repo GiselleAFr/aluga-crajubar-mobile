@@ -28,7 +28,7 @@ class CategoriesSection extends StatelessWidget {
       ),
       const SizedBox(height: 10),
       SizedBox(height: 32, child: ListView.separated(
-        scrollDirection: Axis.horizontal, itemCount: categorias.length, separatorBuilder: (_, __) => const SizedBox(width: 6),
+        scrollDirection: Axis.horizontal, itemCount: categorias.length, separatorBuilder: (_, _) => const SizedBox(width: 6),
         itemBuilder: (context, i) {
           final selected = categoriaSelecionada == i;
           return ChoiceChip(

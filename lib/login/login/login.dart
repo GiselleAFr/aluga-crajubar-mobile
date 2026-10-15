@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await authService.login(
+      final user = await authService.login(
         email: emailController.text.trim(),
         password: passwordController.text,
         remember: lembrar,
@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => const HomePage()),
+        MaterialPageRoute<void>(builder: (_) => HomePage(user: user)),
       );
     } on AuthException catch (error) {
       if (!mounted) return;

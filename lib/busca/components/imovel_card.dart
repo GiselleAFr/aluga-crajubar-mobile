@@ -1,15 +1,10 @@
-
 import 'package:flutter/material.dart';
 
 class ImovelCard extends StatelessWidget {
   final Map<String, dynamic> imovel;
   final VoidCallback onReservar;
 
-  const ImovelCard({
-    super.key,
-    required this.imovel,
-    required this.onReservar,
-  });
+  const ImovelCard({super.key, required this.imovel, required this.onReservar});
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +14,7 @@ class ImovelCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE8D2C7),
-        ),
+        border: Border.all(color: const Color(0xFFE8D2C7)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -38,53 +31,47 @@ class ImovelCard extends StatelessWidget {
             children: [
               AspectRatio(
                 aspectRatio: 1.25,
-                child: Image.network(
-                  imovel['imagem'].toString(),
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) {
-                    return Container(
-                      color: const Color(0xFFE9E1DC),
-                      child: const Center(
-                        child: Icon(
-                          Icons.home_work_outlined,
-                          color: Color(0xFFA83232),
-                          size: 36,
+                child:
+                    (imovel['imagem'] == null ||
+                        imovel['imagem'].toString().isEmpty)
+                    ? _imagemIndisponivel()
+                    : Image.network(
+                        imovel['imagem'].toString(),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => _imagemIndisponivel(),
+                      ),
+              ),
+              if (imovel['avaliacao'] is num)
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Color(0xFFE5A323),
+                          size: 10,
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Positioned(
-                top: 6,
-                left: 6,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: Color(0xFFE5A323),
-                        size: 10,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${imovel['avaliacao']}',
-                        style: const TextStyle(fontSize: 8),
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          (imovel['avaliacao'] as num).toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 8),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
 
@@ -107,10 +94,7 @@ class ImovelCard extends StatelessWidget {
                   imovel['local'].toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 8,
-                    color: Colors.black54,
-                  ),
+                  style: const TextStyle(fontSize: 8, color: Colors.black54),
                 ),
                 const SizedBox(height: 5),
                 Text.rich(
@@ -125,12 +109,9 @@ class ImovelCard extends StatelessWidget {
                           fontSize: 9,
                         ),
                       ),
-                      const TextSpan(
-                        text: '/noite',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 8,
-                        ),
+                      TextSpan(
+                        text: ' ${imovel['periodo_preco'] ?? '/mês'}',
+                        style: TextStyle(color: Colors.black54, fontSize: 8),
                       ),
                     ],
                   ),
@@ -166,4 +147,12 @@ class ImovelCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _imagemIndisponivel() => Container(
+    width: double.infinity,
+    color: const Color(0xFFE9E1DC),
+    child: const Center(
+      child: Icon(Icons.home_work_outlined, color: Color(0xFFA83232), size: 36),
+    ),
+  );
 }

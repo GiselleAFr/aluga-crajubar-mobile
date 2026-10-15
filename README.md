@@ -19,3 +19,12 @@ da API. Atenção: a tela do app coleta e envia telefone no cadastro, mas a bran
 `login-back` da API não define esse campo no contrato de registro; atualmente o
 telefone não é persistido nem normalizado por essa branch. O token Bearer é
 guardado no armazenamento seguro do dispositivo.
+
+A home e a busca consomem `GET /imoveis`, com os filtros `q`, `tipo` e
+`per_page` (até 100 registros). A API atual retorna `titulo`, `tipo`, `preco`,
+`cidade` e `bairro`; imagens e avaliações são opcionais e, quando ausentes, o
+app apresenta um marcador visual padrão.
+
+Inicie o backend Laravel na porta 8000 e execute o app com a URL da API. Em
+dispositivo físico, substitua `IP_DA_MAQUINA` pelo endereço local do computador;
+`localhost` no celular apontaria para o próprio celular.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'components/buscar_header.dart';
@@ -5,9 +7,12 @@ import 'components/campo_busca.dart';
 import 'components/categoria_imoveis.dart';
 import 'components/secao_imoveis.dart';
 import 'components/buscar_bottom_navigation.dart';
+import '../services/property_service.dart';
 
 class BuscarPage extends StatefulWidget {
-  const BuscarPage({super.key});
+  const BuscarPage({super.key, this.userName});
+
+  final String? userName;
 
   @override
   State<BuscarPage> createState() => _BuscarPageState();
@@ -15,6 +20,12 @@ class BuscarPage extends StatefulWidget {
 
 class _BuscarPageState extends State<BuscarPage> {
   final TextEditingController buscaController = TextEditingController();
+  final PropertyService _propertyService = PropertyService();
+  Timer? _searchDebounce;
+  int _requestId = 0;
+  bool _loading = true;
+  String? _loadError;
+  List<Map<String, dynamic>> imoveis = [];
 
   int categoriaSelecionada = 0;
   int indiceSelecionado = 1;
@@ -22,66 +33,65 @@ class _BuscarPageState extends State<BuscarPage> {
   final List<String> categorias = [
     'Casas',
     'Apartamentos',
-    'Chalés',
-    'Fazendas',
+    'Quartos e pousadas',
+    'Comerciais',
+    'Terrenos',
   ];
 
-  final List<Map<String, dynamic>> imoveis = [
-    {
-      'nome': 'Pousada Padre Cícero',
-      'local': 'Juazeiro do Norte',
-      'preco': 350.0,
-      'avaliacao': 4.9,
-      'imagem':
-          'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=700',
-      'categoria': 'Casas',
-    },
-    {
-      'nome': 'Quarto Luxuoso',
-      'local': 'Juazeiro do Norte',
-      'preco': 180.0,
-      'avaliacao': 4.8,
-      'imagem':
-          'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=700',
-      'categoria': 'Apartamentos',
-    },
-    {
-      'nome': 'Chalé da Serra',
-      'local': 'Crato',
-      'preco': 250.0,
-      'avaliacao': 4.9,
-      'imagem':
-          'https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?w=700',
-      'categoria': 'Chalés',
-    },
-    {
-      'nome': 'Casa de Campo',
-      'local': 'Barbalha',
-      'preco': 420.0,
-      'avaliacao': 4.7,
-      'imagem':
-          'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=700',
-      'categoria': 'Casas',
-    },
-  ];
+  String get _selectedTypes => switch (categorias[categoriaSelecionada]) {
+    'Casas' => 'casa',
+    'Apartamentos' => 'apartamento',
+    'Quartos e pousadas' => 'quarto,pousada,kitnet',
+    'Comerciais' => 'comercial',
+    'Terrenos' => 'terreno',
+    _ => '',
+  };
 
-  List<Map<String, dynamic>> get imoveisFiltrados {
-    final pesquisa = buscaController.text.toLowerCase().trim();
+  @override
+  void initState() {
+    super.initState();
+    _loadProperties();
+  }
 
-    return imoveis.where((imovel) {
-      final correspondeCategoria =
-          imovel['categoria'] == categorias[categoriaSelecionada];
-
-      final correspondePesquisa =
-          imovel['nome'].toString().toLowerCase().contains(pesquisa) ||
-          imovel['local'].toString().toLowerCase().contains(pesquisa);
-
-      return correspondeCategoria && correspondePesquisa;
-    }).toList();
+  Future<void> _loadProperties({bool debounce = false}) async {
+    _searchDebounce?.cancel();
+    if (debounce) {
+      _searchDebounce = Timer(
+        const Duration(milliseconds: 350),
+        () => _loadProperties(),
+      );
+      return;
+    }
+    final requestId = ++_requestId;
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final properties = await _propertyService.search(
+        query: buscaController.text,
+        types: _selectedTypes,
+      );
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        imoveis = properties
+            .map((property) => property.toSearchCardData())
+            .toList();
+        _loading = false;
+      });
+    } on PropertyApiException catch (error) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = error.message;
+        _loading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _propertyService.close();
     buscaController.dispose();
     super.dispose();
   }
@@ -90,6 +100,7 @@ class _BuscarPageState extends State<BuscarPage> {
     setState(() {
       categoriaSelecionada = indice;
     });
+    _loadProperties();
   }
 
   void selecionarNavegacao(int indice) {
@@ -107,7 +118,7 @@ class _BuscarPageState extends State<BuscarPage> {
 
   @override
   Widget build(BuildContext context) {
-    final encontrados = imoveisFiltrados;
+    final encontrados = imoveis;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7F7),
@@ -115,7 +126,7 @@ class _BuscarPageState extends State<BuscarPage> {
         bottom: false,
         child: Column(
           children: [
-            const BuscarHeader(),
+            BuscarHeader(userName: widget.userName),
 
             Expanded(
               child: ListView(
@@ -139,7 +150,7 @@ class _BuscarPageState extends State<BuscarPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: CampoBusca(
                       controller: buscaController,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (_) => _loadProperties(debounce: true),
                     ),
                   ),
 
@@ -156,39 +167,61 @@ class _BuscarPageState extends State<BuscarPage> {
 
                   const SizedBox(height: 12),
 
-                  SecaoImoveis(
-                    titulo: 'DESTAQUES',
-                    subtitulo: 'As melhores opções de aluguel',
-                    imoveis: encontrados,
-                    onVerTodos: () {},
-                    onReservar: (imovel) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Imóvel selecionado: ${imovel['nome']}',
-                          ),
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.all(36),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_loadError != null)
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Text(_loadError!, textAlign: TextAlign.center),
+                            TextButton(
+                              onPressed: _loadProperties,
+                              child: const Text('Tentar novamente'),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  SecaoImoveis(
-                    titulo: 'PERTO DE VOCÊ',
-                    subtitulo: 'As melhores opções da região',
-                    imoveis: encontrados.reversed.toList(),
-                    onVerTodos: () {},
-                    onReservar: (imovel) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Imóvel selecionado: ${imovel['nome']}',
+                      ),
+                    )
+                  else ...[
+                    SecaoImoveis(
+                      titulo: 'DESTAQUES',
+                      subtitulo: 'As melhores opções de aluguel',
+                      imoveis: encontrados,
+                      onVerTodos: () {},
+                      onReservar: (imovel) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Imóvel selecionado: ${imovel['nome']}',
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    SecaoImoveis(
+                      titulo: 'PERTO DE VOCÊ',
+                      subtitulo: 'As melhores opções da região',
+                      imoveis: encontrados.reversed.toList(),
+                      onVerTodos: () {},
+                      onReservar: (imovel) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Imóvel selecionado: ${imovel['nome']}',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
 
                   const SizedBox(height: 12),
                 ],
