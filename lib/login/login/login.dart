@@ -15,7 +15,9 @@ import '../../home/home_page.dart';
 import '../../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.authService});
+
+  final AuthService? authService;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -26,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final TextEditingController passwordController = TextEditingController();
 
-  final AuthService authService = AuthService();
+  late final AuthService authService = widget.authService ?? AuthService();
 
   bool lembrar = true;
   bool esconderSenha = true;

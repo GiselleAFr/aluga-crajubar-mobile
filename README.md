@@ -15,6 +15,7 @@ Para sobrescrever o padrão, passe `--dart-define=API_BASE_URL=<URL>` ao
 produção e no iOS.
 
 Login, cadastro, recuperação e redefinição de senha usam os endpoints `/auth`
-da API. O cadastro envia nome, e-mail, telefone e senha; a API normaliza o
-telefone para o formato internacional. O token Bearer é guardado no
-armazenamento seguro do dispositivo.
+da API. Atenção: a tela do app coleta e envia telefone no cadastro, mas a branch
+`login-back` da API não define esse campo no contrato de registro; atualmente o
+telefone não é persistido nem normalizado por essa branch. O token Bearer é
+guardado no armazenamento seguro do dispositivo.

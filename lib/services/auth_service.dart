@@ -58,7 +58,12 @@ class AuthService {
     if (kDebugMode &&
         email.trim().toLowerCase() == temporaryLoginEmail &&
         password == temporaryLoginPassword) {
-      await _storage.write(key: _tokenKey, value: _demoAccessToken);
+      try {
+        await _storage.write(key: _tokenKey, value: _demoAccessToken);
+      } catch (error) {
+        // O login demo deve continuar funcionando mesmo sem keyring no desktop.
+        debugPrint('Não foi possível persistir a sessão demo: $error');
+      }
       return const AuthUser(
         id: 0,
         name: 'Conta de demonstração',

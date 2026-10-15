@@ -1,13 +1,10 @@
 
 import 'dart:async';
-
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-
-import 'home/home_page.dart';
 import 'login/login/login.dart';
 import 'login/recovery/recovery.dart';
-import 'services/auth_service.dart';
+
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -84,62 +81,7 @@ class _MeuAppState extends State<MeuApp> {
           seedColor: const Color(0xFF963333),
         ),
       ),
-      home: const AuthGate(),
-    );
-  }
-}
-
-class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
-
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
-  final AuthService authService = AuthService();
-
-  late Future<AuthUser?> session = _restoreSession();
-
-  Future<AuthUser?> _restoreSession() async {
-    if (await authService.accessToken == null) {
-      return null;
-    }
-
-    try {
-      return await authService.currentUser();
-    } on AuthException catch (e) {
-      debugPrint('Não foi possível restaurar a sessão: $e');
-      return null;
-    } catch (e) {
-      debugPrint('Erro inesperado ao restaurar sessão: $e');
-      return null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<AuthUser?>(
-      future: session,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF963333),
-              ),
-            ),
-          );
-        }
-
-        final AuthUser? user = snapshot.data;
-
-        if (user == null) {
-          return const LoginPage();
-        }
-
-        return const HomePage();
-      },
+      home: const LoginPage(),
     );
   }
 }
