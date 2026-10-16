@@ -27,6 +27,77 @@ class AuthUser {
   }
 }
 
+class AuthProfile {
+  const AuthProfile({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.role,
+    required this.isLandlord,
+    required this.availableTabs,
+    required this.completedStaysCount,
+  });
+
+  final int id;
+  final String name;
+  final String email;
+  final String? phone;
+  final String role;
+  final bool isLandlord;
+  final List<String> availableTabs;
+  final int completedStaysCount;
+
+  factory AuthProfile.fromJson(Map<String, dynamic> json) => AuthProfile(
+    id: (json['id'] as num).toInt(),
+    name: json['name'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    phone: json['phone'] as String?,
+    role: json['role'] as String? ?? 'client',
+    isLandlord: json['is_landlord'] as bool? ?? false,
+    availableTabs: (json['available_tabs'] as List? ?? const [])
+        .whereType<String>()
+        .toList(),
+    completedStaysCount: (json['completed_stays_count'] as num?)?.toInt() ?? 0,
+  );
+}
+
+class StayRecord {
+  const StayRecord({
+    required this.id,
+    required this.propertyName,
+    required this.city,
+    required this.checkIn,
+    required this.checkOut,
+    required this.guests,
+    required this.totalAmount,
+    required this.currency,
+    required this.status,
+  });
+
+  final int id;
+  final String propertyName;
+  final String? city;
+  final String? checkIn;
+  final String? checkOut;
+  final int guests;
+  final double totalAmount;
+  final String currency;
+  final String status;
+
+  factory StayRecord.fromJson(Map<String, dynamic> json) => StayRecord(
+    id: (json['id'] as num).toInt(),
+    propertyName: json['property_name'] as String? ?? 'Hospedagem',
+    city: json['city'] as String?,
+    checkIn: json['check_in'] as String?,
+    checkOut: json['check_out'] as String?,
+    guests: (json['guests'] as num?)?.toInt() ?? 1,
+    totalAmount: double.tryParse(json['total_amount']?.toString() ?? '') ?? 0,
+    currency: json['currency'] as String? ?? 'BRL',
+    status: json['status'] as String? ?? '',
+  );
+}
+
 class AuthException implements Exception {
   const AuthException(this.message);
 
@@ -124,6 +195,35 @@ class AuthService {
     return AuthUser.fromJson(user);
   }
 
+  Future<AuthProfile> profile() async {
+    final data = await _request('GET', '/auth/profile', authenticated: true);
+    final user = data['user'];
+    if (user is! Map<String, dynamic>) {
+      throw const AuthException('Resposta inválida ao consultar o perfil.');
+    }
+    return AuthProfile.fromJson({
+      ...user,
+      'completed_stays_count': data['completed_stays_count'],
+    });
+  }
+
+  Future<List<StayRecord>> stayHistory({int perPage = 15}) async {
+    final data = await _request(
+      'GET',
+      '/auth/profile/stays',
+      authenticated: true,
+      queryParameters: {'per_page': '${perPage.clamp(1, 50)}'},
+    );
+    final stays = data['data'];
+    if (stays is! List) {
+      throw const AuthException('Resposta inválida ao consultar hospedagens.');
+    }
+    return stays
+        .whereType<Map<String, dynamic>>()
+        .map(StayRecord.fromJson)
+        .toList();
+  }
+
   Future<void> logout() async {
     final token = await _storage.read(key: _tokenKey);
     if (token == _demoAccessToken) {
@@ -183,12 +283,16 @@ class AuthService {
     String path, {
     Map<String, dynamic>? body,
     bool authenticated = false,
+    Map<String, String>? queryParameters,
   }) async {
     final base = Uri.parse(apiBaseUrl);
     final basePath = base.path.endsWith('/')
         ? base.path.substring(0, base.path.length - 1)
         : base.path;
-    final uri = base.replace(path: '$basePath$path');
+    final uri = base.replace(
+      path: '$basePath$path',
+      queryParameters: queryParameters,
+    );
     final headers = <String, String>{
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json',

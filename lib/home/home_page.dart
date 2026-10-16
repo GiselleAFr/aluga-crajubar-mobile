@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
+import '../profile/account_page.dart';
 import '../search/buscar_page.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
@@ -163,7 +164,30 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    if (indice == 3 || indice == 4) {
+      _abrirConta(indice);
+      return;
+    }
+
     setState(() => _navIndex = indice);
+  }
+
+  void _abrirConta(int indice) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AccountPage(
+          initialNavigationIndex: indice,
+          onNavigate: (selectedIndex) {
+            Navigator.of(context).pop();
+            if (selectedIndex == 1) {
+              _abrirBusca();
+            } else if (selectedIndex == 2) {
+              _abrirFavoritos();
+            }
+          },
+        ),
+      ),
+    );
   }
 
   void _abrirBusca() {
