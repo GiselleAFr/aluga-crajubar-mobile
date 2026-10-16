@@ -6,13 +6,19 @@ import 'components/buscar_header.dart';
 import 'components/campo_busca.dart';
 import 'components/categoria_imoveis.dart';
 import 'components/secao_imoveis.dart';
-import 'components/buscar_bottom_navigation.dart';
+import '../home/components/home_navigation.dart';
 import '../services/property_service.dart';
+import '../responsive_content.dart';
 
 class BuscarPage extends StatefulWidget {
-  const BuscarPage({super.key, this.userName});
+  const BuscarPage({
+    super.key,
+    this.userName,
+    required this.onFavoritosPressed,
+  });
 
   final String? userName;
+  final VoidCallback onFavoritosPressed;
 
   @override
   State<BuscarPage> createState() => _BuscarPageState();
@@ -109,6 +115,11 @@ class _BuscarPageState extends State<BuscarPage> {
       return;
     }
 
+    if (indice == 2) {
+      widget.onFavoritosPressed();
+      return;
+    }
+
     if (indice != indiceSelecionado) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Esta seção ainda não está disponível.')),
@@ -129,111 +140,114 @@ class _BuscarPageState extends State<BuscarPage> {
             BuscarHeader(userName: widget.userName),
 
             Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                    child: const Text(
-                      'Buscar Imóveis',
-                      style: TextStyle(
-                        color: Color(0xFFA83232),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: CampoBusca(
-                      controller: buscaController,
-                      onChanged: (_) => _loadProperties(debounce: true),
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: CategoriaImoveis(
-                      categorias: categorias,
-                      selecionada: categoriaSelecionada,
-                      onSelecionar: selecionarCategoria,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.all(36),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_loadError != null)
+              child: ResponsiveContent(
+                maxWidth: 1200,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ListView(
+                  padding: EdgeInsets.zero,
+                  children: [
                     Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Text(_loadError!, textAlign: TextAlign.center),
-                            TextButton(
-                              onPressed: _loadProperties,
-                              child: const Text('Tentar novamente'),
-                            ),
-                          ],
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                      child: const Text(
+                        'Buscar Imóveis',
+                        style: TextStyle(
+                          color: Color(0xFFA83232),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    )
-                  else ...[
-                    SecaoImoveis(
-                      titulo: 'DESTAQUES',
-                      subtitulo: 'As melhores opções de aluguel',
-                      imoveis: encontrados,
-                      onVerTodos: () {},
-                      onReservar: (imovel) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Imóvel selecionado: ${imovel['nome']}',
-                            ),
-                          ),
-                        );
-                      },
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
 
-                    SecaoImoveis(
-                      titulo: 'PERTO DE VOCÊ',
-                      subtitulo: 'As melhores opções da região',
-                      imoveis: encontrados.reversed.toList(),
-                      onVerTodos: () {},
-                      onReservar: (imovel) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Imóvel selecionado: ${imovel['nome']}',
-                            ),
-                          ),
-                        );
-                      },
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: CampoBusca(
+                        controller: buscaController,
+                        onChanged: (_) => _loadProperties(debounce: true),
+                      ),
                     ),
+
+                    const SizedBox(height: 10),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: CategoriaImoveis(
+                        categorias: categorias,
+                        selecionada: categoriaSelecionada,
+                        onSelecionar: selecionarCategoria,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.all(36),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_loadError != null)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Text(_loadError!, textAlign: TextAlign.center),
+                              TextButton(
+                                onPressed: _loadProperties,
+                                child: const Text('Tentar novamente'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else ...[
+                      SecaoImoveis(
+                        titulo: 'DESTAQUES',
+                        subtitulo: 'As melhores opções de aluguel',
+                        imoveis: encontrados,
+                        onVerTodos: () {},
+                        onReservar: (imovel) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Imóvel selecionado: ${imovel['nome']}',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SecaoImoveis(
+                        titulo: 'PERTO DE VOCÊ',
+                        subtitulo: 'As melhores opções da região',
+                        imoveis: encontrados.reversed.toList(),
+                        onVerTodos: () {},
+                        onReservar: (imovel) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Imóvel selecionado: ${imovel['nome']}',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 12),
                   ],
-
-                  const SizedBox(height: 12),
-                ],
+                ),
               ),
-            ),
-
-            BuscarBottomNavigation(
-              indiceSelecionado: indiceSelecionado,
-              onSelecionar: selecionarNavegacao,
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: HomeBottomNavigation(
+        indiceSelecionado: indiceSelecionado,
+        onItemSelecionado: selecionarNavegacao,
       ),
     );
   }

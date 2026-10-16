@@ -5,6 +5,7 @@ import 'components/password_field.dart';
 import 'components/change_password_button.dart';
 import 'components/email_verification.dart';
 import '../../services/auth_service.dart';
+import '../../responsive_content.dart';
 
 class RecoveryPage extends StatefulWidget {
   const RecoveryPage({super.key, this.resetEmail, this.resetToken});
@@ -154,100 +155,102 @@ class _RecoveryPageState extends State<RecoveryPage> {
             // ================================
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                child: ResponsiveContent(
+                  maxWidth: 640,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-
-                  children: [
-                    // ==========================
-                    // TÍTULO
-                    // ==========================
-
-                    Text(
-                      widget.resetToken == null
-                          ? 'Recuperar Senha'
-                          : 'Alterar Senha',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFA83232),
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // ==========================
-                    if (widget.resetToken != null) ...[
-                      // NOVA SENHA
+                    children: [
+                      // ==========================
+                      // TÍTULO
                       // ==========================
 
-                      PasswordField(
-                        label: 'Nova Senha',
-
-                        controller: novaSenhaController,
-
-                        obscureText: esconderNovaSenha,
-
-                        onVisibilityPressed: () {
-                          setState(() {
-                            esconderNovaSenha = !esconderNovaSenha;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      // ==========================
-                      // CONFIRMAR SENHA
-                      // ==========================
-                      PasswordField(
-                        label: 'Confirmar Nova Senha',
-
-                        controller: confirmarSenhaController,
-
-                        obscureText: esconderConfirmarSenha,
-
-                        onVisibilityPressed: () {
-                          setState(() {
-                            esconderConfirmarSenha = !esconderConfirmarSenha;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // ==========================
-                      // ALTERAR SENHA
-                      // ==========================
-                      ChangePasswordButton(
-                        onPressed: alterarSenha,
-                        isLoading: enviando,
-                      ),
-
-                      const SizedBox(height: 10),
-                    ],
-
-                    // ==========================
-                    // VERIFICAÇÃO
-                    // ==========================
-                    if (widget.resetToken == null)
-                      EmailVerification(
-                        emailController: emailController,
-                        onSendCode: enviarCodigo,
-                        isLoading: enviando,
-                      )
-                    else
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(
-                          'Redefinindo a senha de ${emailController.text}',
+                      Text(
+                        widget.resetToken == null
+                            ? 'Recuperar Senha'
+                            : 'Alterar Senha',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFA83232),
                         ),
                       ),
-                  ],
+
+                      const SizedBox(height: 10),
+
+                      // ==========================
+                      if (widget.resetToken != null) ...[
+                        // NOVA SENHA
+                        // ==========================
+
+                        PasswordField(
+                          label: 'Nova Senha',
+
+                          controller: novaSenhaController,
+
+                          obscureText: esconderNovaSenha,
+
+                          onVisibilityPressed: () {
+                            setState(() {
+                              esconderNovaSenha = !esconderNovaSenha;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // ==========================
+                        // CONFIRMAR SENHA
+                        // ==========================
+                        PasswordField(
+                          label: 'Confirmar Nova Senha',
+
+                          controller: confirmarSenhaController,
+
+                          obscureText: esconderConfirmarSenha,
+
+                          onVisibilityPressed: () {
+                            setState(() {
+                              esconderConfirmarSenha = !esconderConfirmarSenha;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ==========================
+                        // ALTERAR SENHA
+                        // ==========================
+                        ChangePasswordButton(
+                          onPressed: alterarSenha,
+                          isLoading: enviando,
+                        ),
+
+                        const SizedBox(height: 10),
+                      ],
+
+                      // ==========================
+                      // VERIFICAÇÃO
+                      // ==========================
+                      if (widget.resetToken == null)
+                        EmailVerification(
+                          emailController: emailController,
+                          onSendCode: enviarCodigo,
+                          isLoading: enviando,
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'Redefinindo a senha de ${emailController.text}',
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

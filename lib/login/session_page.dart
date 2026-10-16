@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../responsive_content.dart';
 import 'login/login.dart';
 
 class SessionPage extends StatefulWidget {
@@ -36,7 +37,8 @@ class _SessionPageState extends State<SessionPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Aluga Crajubar')),
       body: Center(
-        child: Padding(
+        child: ResponsiveContent(
+          maxWidth: 480,
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,

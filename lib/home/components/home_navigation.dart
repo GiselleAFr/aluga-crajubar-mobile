@@ -45,7 +45,7 @@ class HomeBottomNavigation extends StatelessWidget {
                     Text(
                       item.$2,
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 12,
                         color: color,
                         fontWeight: selected
                             ? FontWeight.bold

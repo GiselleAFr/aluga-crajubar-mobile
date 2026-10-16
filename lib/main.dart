@@ -1,10 +1,10 @@
-
 import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+
 import 'login/login/login.dart';
 import 'login/recovery/recovery.dart';
-
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -40,8 +40,7 @@ class _MeuAppState extends State<MeuApp> {
   void _openResetLink(Uri uri) {
     final bool isResetLink =
         uri.scheme == 'alugacrajubar' &&
-        (uri.host == 'reset-password' ||
-            uri.path == '/reset-password');
+        (uri.host == 'reset-password' || uri.path == '/reset-password');
 
     final String? token = uri.queryParameters['token'];
     final String? email = uri.queryParameters['email'];
@@ -53,10 +52,7 @@ class _MeuAppState extends State<MeuApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       appNavigatorKey.currentState?.push(
         MaterialPageRoute<void>(
-          builder: (_) => RecoveryPage(
-            resetEmail: email,
-            resetToken: token,
-          ),
+          builder: (_) => RecoveryPage(resetEmail: email, resetToken: token),
         ),
       );
     });
@@ -70,15 +66,53 @@ class _MeuAppState extends State<MeuApp> {
 
   @override
   Widget build(BuildContext context) {
+    final baseTheme = ThemeData(
+      useMaterial3: true,
+      fontFamily: 'Roboto',
+      scaffoldBackgroundColor: const Color(0xFFF8F7F5),
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF963333)),
+    );
+
     return MaterialApp(
       navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Aluga Cariri',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF8F7F5),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF963333),
+      theme: baseTheme.copyWith(
+        textTheme: baseTheme.textTheme.copyWith(
+          displayLarge: baseTheme.textTheme.displayLarge?.copyWith(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+          ),
+          headlineLarge: baseTheme.textTheme.headlineLarge?.copyWith(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+          ),
+          headlineMedium: baseTheme.textTheme.headlineMedium?.copyWith(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+          headlineSmall: baseTheme.textTheme.headlineSmall?.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          titleLarge: baseTheme.textTheme.titleLarge?.copyWith(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          titleMedium: baseTheme.textTheme.titleMedium?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+          titleSmall: baseTheme.textTheme.titleSmall?.copyWith(fontSize: 14),
+          bodyLarge: baseTheme.textTheme.bodyLarge?.copyWith(fontSize: 16),
+          bodyMedium: baseTheme.textTheme.bodyMedium?.copyWith(fontSize: 16),
+          bodySmall: baseTheme.textTheme.bodySmall?.copyWith(fontSize: 14),
+          labelLarge: baseTheme.textTheme.labelLarge?.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          labelMedium: baseTheme.textTheme.labelMedium?.copyWith(fontSize: 14),
+          labelSmall: baseTheme.textTheme.labelSmall?.copyWith(fontSize: 12),
         ),
       ),
       home: const LoginPage(),

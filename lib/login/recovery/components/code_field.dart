@@ -29,18 +29,13 @@ class CodeField extends StatelessWidget {
 
         maxLength: 1,
 
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
 
         decoration: InputDecoration(
           counterText: '',
           contentPadding: EdgeInsets.zero,
 
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
 
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),

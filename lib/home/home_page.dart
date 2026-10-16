@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../favorites/favorites_page.dart';
 import '../busca/buscar_page.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
@@ -122,7 +123,7 @@ class _HomePageState extends State<HomePage> {
               'R\$ ${p.preco.toStringAsFixed(2).replaceAll('.', ',')} ${p.periodoPreco}',
               style: const TextStyle(
                 color: Color(0xFF963333),
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -153,15 +154,52 @@ class _HomePageState extends State<HomePage> {
 
   void _selecionarNavegacao(int indice) {
     if (indice == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => BuscarPage(userName: widget.user?.name),
-        ),
-      );
+      _abrirBusca();
+      return;
+    }
+
+    if (indice == 2) {
+      _abrirFavoritos();
       return;
     }
 
     setState(() => _navIndex = indice);
+  }
+
+  void _abrirBusca() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BuscarPage(
+          userName: widget.user?.name,
+          onFavoritosPressed: () {
+            Navigator.of(context).pop();
+            _abrirFavoritos();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _abrirFavoritos() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FavoritesPage(
+          imoveis: _properties,
+          userName: widget.user?.name ?? 'viajante',
+          onFavoritoPressed: (property) =>
+              setState(() => property.favorito = !property.favorito),
+          onReservarPressed: _showProperty,
+          onItemSelecionado: (selectedIndex) {
+            if (selectedIndex == 0) {
+              Navigator.of(context).pop();
+            } else if (selectedIndex == 1) {
+              Navigator.of(context).pop();
+              _abrirBusca();
+            }
+          },
+        ),
+      ),
+    );
   }
 
   @override

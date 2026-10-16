@@ -13,6 +13,7 @@ import '../recovery/recovery.dart';
 
 import '../../home/home_page.dart';
 import '../../services/auth_service.dart';
+import '../../responsive_content.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, this.authService});
@@ -110,8 +111,9 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: ResponsiveContent(
+            maxWidth: 520,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 const SizedBox(height: 45),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class CampoBusca extends StatelessWidget {
@@ -23,20 +22,16 @@ class CampoBusca extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 10),
-          const Icon(
-            Icons.home_outlined,
-            color: Color(0xFFA83232),
-            size: 17,
-          ),
+          const Icon(Icons.home_outlined, color: Color(0xFFA83232), size: 17),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 16),
               decoration: const InputDecoration(
                 hintText: 'Casas e Apartamentos',
-                hintStyle: TextStyle(fontSize: 11),
+                hintStyle: TextStyle(fontSize: 14),
                 border: InputBorder.none,
                 isDense: true,
               ),

@@ -89,7 +89,7 @@ class PropertyCard extends StatelessWidget {
                       Text(
                         property.nota!.toStringAsFixed(1),
                         style: const TextStyle(
-                          fontSize: 9,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -124,7 +124,7 @@ class PropertyCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -133,14 +133,14 @@ class PropertyCard extends StatelessWidget {
                 property.local,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 9, color: Colors.black54),
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
               const SizedBox(height: 5),
               RichText(
                 text: TextSpan(
                   style: const TextStyle(
                     color: Color(0xFF963333),
-                    fontSize: 10,
+                    fontSize: 14,
                   ),
                   children: [
                     TextSpan(
@@ -150,7 +150,7 @@ class PropertyCard extends StatelessWidget {
                     ),
                     TextSpan(
                       text: ' ${property.periodoPreco}',
-                      style: TextStyle(color: Colors.black54, fontSize: 9),
+                      style: TextStyle(color: Colors.black54, fontSize: 12),
                     ),
                   ],
                 ),
@@ -172,7 +172,7 @@ class PropertyCard extends StatelessWidget {
                   ),
                   child: const Text(
                     'Reservar',
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

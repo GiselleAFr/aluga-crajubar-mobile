@@ -7,6 +7,7 @@ import 'components/register_button.dart';
 import 'components/return_login.dart';
 import '../session_page.dart';
 import '../../services/auth_service.dart';
+import '../../responsive_content.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -90,9 +91,9 @@ class _RegisterPageState extends State<RegisterPage> {
 
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-
+          child: ResponsiveContent(
+            maxWidth: 560,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 const SizedBox(height: 45),
@@ -100,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 // HEADER
                 const RegisterHeader(),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 36),
 
                 // NOME
                 RegisterTextField(

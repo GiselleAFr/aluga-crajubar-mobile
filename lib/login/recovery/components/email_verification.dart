@@ -26,7 +26,7 @@ class EmailVerification extends StatelessWidget {
         const Text(
           'Verificação por e-mail',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Color(0xFFA83232),
           ),
@@ -37,7 +37,7 @@ class EmailVerification extends StatelessWidget {
         const Text(
           'Informe seu e-mail cadastrado. Enviaremos um link seguro '
           'para redefinir sua senha.',
-          style: TextStyle(fontSize: 9, height: 1.4),
+          style: TextStyle(fontSize: 14, height: 1.4),
         ),
 
         const SizedBox(height: 12),

@@ -66,7 +66,7 @@ class ImovelCard extends StatelessWidget {
                         const SizedBox(width: 3),
                         Text(
                           (imovel['avaliacao'] as num).toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 8),
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
@@ -82,10 +82,10 @@ class ImovelCard extends StatelessWidget {
               children: [
                 Text(
                   imovel['nome'].toString(),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 9,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -94,7 +94,7 @@ class ImovelCard extends StatelessWidget {
                   imovel['local'].toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 8, color: Colors.black54),
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 5),
                 Text.rich(
@@ -106,12 +106,12 @@ class ImovelCard extends StatelessWidget {
                         style: const TextStyle(
                           color: Color(0xFFA83232),
                           fontWeight: FontWeight.bold,
-                          fontSize: 9,
+                          fontSize: 14,
                         ),
                       ),
                       TextSpan(
                         text: ' ${imovel['periodo_preco'] ?? '/mês'}',
-                        style: TextStyle(color: Colors.black54, fontSize: 8),
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                     ],
                   ),
@@ -134,7 +134,7 @@ class ImovelCard extends StatelessWidget {
                     child: const Text(
                       'Reservar',
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+
 import 'imovel_card.dart';
 
 class SecaoImoveis extends StatelessWidget {
@@ -32,7 +32,7 @@ class SecaoImoveis extends StatelessWidget {
                   titulo,
                   style: const TextStyle(
                     color: Color(0xFFA83232),
-                    fontSize: 11,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -43,7 +43,7 @@ class SecaoImoveis extends StatelessWidget {
                   'Ver todos',
                   style: TextStyle(
                     color: Color(0xFFA83232),
-                    fontSize: 9,
+                    fontSize: 14,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -53,10 +53,7 @@ class SecaoImoveis extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             subtitulo,
-            style: const TextStyle(
-              color: Colors.black54,
-              fontSize: 9,
-            ),
+            style: const TextStyle(color: Colors.black54, fontSize: 14),
           ),
           const SizedBox(height: 9),
 
@@ -66,18 +63,24 @@ class SecaoImoveis extends StatelessWidget {
               child: Center(
                 child: Text(
                   'Nenhum imóvel encontrado.',
-                  style: TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 14),
                 ),
               ),
             )
           else
             LayoutBuilder(
               builder: (context, constraints) {
-                final largura = (constraints.maxWidth - 10) / 2;
+                final columns = (constraints.maxWidth / 250)
+                    .floor()
+                    .clamp(1, 4)
+                    .toInt();
+                final spacing = 12.0;
+                final largura =
+                    (constraints.maxWidth - spacing * (columns - 1)) / columns;
 
                 return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: spacing,
+                  runSpacing: spacing,
                   children: imoveis.map((imovel) {
                     return SizedBox(
                       width: largura,

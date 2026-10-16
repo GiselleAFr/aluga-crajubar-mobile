@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class RecoveryHeader extends StatelessWidget {
   final VoidCallback onBack;
 
-  const RecoveryHeader({
-    super.key,
-    required this.onBack,
-  });
+  const RecoveryHeader({super.key, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -16,10 +13,7 @@ class RecoveryHeader extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
-              size: 14,
-            ),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 14),
           ),
 
           Expanded(
@@ -28,10 +22,7 @@ class RecoveryHeader extends StatelessWidget {
                 offset: const Offset(-20, 0),
                 child: const Text(
                   'Segurança e Login',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
