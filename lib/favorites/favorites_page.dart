@@ -33,8 +33,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
   final List<String> categorias = const [
     'Casas',
     'Apartamentos',
-    'Chalés',
-    'Fazendas',
+    'Quartos e pousadas',
+    'Comerciais',
+    'Terrenos',
   ];
 
   List<Property> get imoveisFavoritos {

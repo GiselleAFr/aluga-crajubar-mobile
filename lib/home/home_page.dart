@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
-import '../busca/buscar_page.dart';
+import '../search/buscar_page.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
 import 'components/featured_properties.dart';
