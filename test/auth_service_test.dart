@@ -131,66 +131,45 @@ void main() {
     expect(find.byType(HomePage), findsOneWidget);
   });
 
-  test('profile and stay history use authenticated API endpoints', () async {
-    final storage = FakeSecureStorage();
-    await storage.write(key: 'auth_access_token', value: 'test-token');
-    final requests = <http.Request>[];
-    final service = AuthService(
-      storage: storage,
-      client: MockClient((request) async {
-        requests.add(request);
-        if (request.url.path.endsWith('/auth/profile/stays')) {
+  test(
+    'current user reads profile fields from authenticated /auth/me',
+    () async {
+      final storage = FakeSecureStorage();
+      await storage.write(key: 'auth_access_token', value: 'test-token');
+      http.Request? request;
+      final service = AuthService(
+        storage: storage,
+        client: MockClient((incoming) async {
+          request = incoming;
           return http.Response(
             jsonEncode({
-              'data': [
-                {
-                  'id': 14,
-                  'property_name': 'Casa do Centro',
-                  'city': 'Crato',
-                  'check_in': '2026-08-01',
-                  'check_out': '2026-08-05',
-                  'guests': 2,
-                  'total_amount': '680.00',
-                  'currency': 'BRL',
-                  'status': 'completed',
-                },
-              ],
-              'meta': {'per_page': 15, 'total': 1},
+              'user': {
+                'id': 7,
+                'name': 'Ana Silva',
+                'email': 'ana@example.com',
+                'phone': '+5588999991234',
+                'created_at': '2024-05-10T12:00:00.000000Z',
+                'role': 'client',
+                'is_landlord': false,
+                'available_tabs': ['cliente'],
+              },
             }),
             200,
           );
-        }
-        return http.Response(
-          jsonEncode({
-            'user': {
-              'id': 7,
-              'name': 'Ana Silva',
-              'email': 'ana@example.com',
-              'phone': '+5588999991234',
-              'role': 'client',
-              'is_landlord': false,
-              'available_tabs': ['cliente'],
-            },
-            'completed_stays_count': 3,
-          }),
-          200,
-        );
-      }),
-    );
+        }),
+      );
 
-    final profile = await service.profile();
-    final stays = await service.stayHistory();
+      final user = await service.currentUser();
 
-    expect(profile.name, 'Ana Silva');
-    expect(profile.phone, '+5588999991234');
-    expect(profile.completedStaysCount, 3);
-    expect(stays.single.propertyName, 'Casa do Centro');
-    expect(stays.single.totalAmount, 680);
-    expect(requests, hasLength(2));
-    expect(requests.first.url.path, endsWith('/api/auth/profile'));
-    expect(requests.last.url.path, endsWith('/api/auth/profile/stays'));
-    expect(requests.last.url.queryParameters['per_page'], '15');
-    expect(requests.first.headers['Authorization'], 'Bearer test-token');
-    expect(requests.last.headers['Authorization'], 'Bearer test-token');
-  });
+      expect(user.name, 'Ana Silva');
+      expect(user.email, 'ana@example.com');
+      expect(user.phone, '+5588999991234');
+      expect(user.createdAt?.year, 2024);
+      expect(user.role, 'client');
+      expect(user.availableTabs, ['cliente']);
+      expect(request?.url.path, endsWith('/api/auth/me'));
+      expect(request?.headers['Authorization'], 'Bearer test-token');
+      service.close();
+    },
+  );
 }

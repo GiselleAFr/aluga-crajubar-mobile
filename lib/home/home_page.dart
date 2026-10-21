@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
-import '../profile/account_page.dart';
+import '../login/login/login.dart';
+import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> {
     'Comerciais',
     'Terrenos',
   ];
+  final _authService = AuthService();
   final _propertyService = PropertyService();
   final List<Property> _properties = [];
   Timer? _searchDebounce;
@@ -58,6 +60,7 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     _searchDebounce?.cancel();
     _propertyService.close();
+    _authService.close();
     super.dispose();
   }
 
@@ -175,9 +178,14 @@ class _HomePageState extends State<HomePage> {
   void _abrirConta(int indice) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => AccountPage(
-          initialNavigationIndex: indice,
-          onNavigate: (selectedIndex) {
+        builder: (_) => ProfilePage(
+          nomeUsuario: widget.user?.name ?? 'viajante',
+          user: widget.user,
+          authService: _authService,
+          indiceSelecionado: indice,
+          onLogout: _sairDaConta,
+          onItemSelecionado: (selectedIndex) {
+            if (selectedIndex == 4) return;
             Navigator.of(context).pop();
             if (selectedIndex == 1) {
               _abrirBusca();
@@ -187,6 +195,20 @@ class _HomePageState extends State<HomePage> {
           },
         ),
       ),
+    );
+  }
+
+  Future<void> _sairDaConta() async {
+    try {
+      await _authService.logout();
+    } catch (error) {
+      debugPrint('Não foi possível concluir o logout remoto: $error');
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const LoginPage()),
+      (route) => false,
     );
   }
 
