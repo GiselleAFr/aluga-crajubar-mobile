@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-
+import '../../home/models/property.dart';
 import 'imovel_card.dart';
 
 class SecaoImoveis extends StatelessWidget {
   final String titulo;
   final String subtitulo;
-  final List<Map<String, dynamic>> imoveis;
+  final List<Property> imoveis;
   final VoidCallback onVerTodos;
-  final ValueChanged<Map<String, dynamic>> onReservar;
+  final ValueChanged<Property> onReservar;
+  final ValueChanged<Property> onImovelPressed;
 
   const SecaoImoveis({
     super.key,
@@ -16,6 +17,7 @@ class SecaoImoveis extends StatelessWidget {
     required this.imoveis,
     required this.onVerTodos,
     required this.onReservar,
+    required this.onImovelPressed,
   });
 
   @override
@@ -53,10 +55,12 @@ class SecaoImoveis extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             subtitulo,
-            style: const TextStyle(color: Colors.black54, fontSize: 14),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 9),
-
           if (imoveis.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
@@ -74,9 +78,11 @@ class SecaoImoveis extends StatelessWidget {
                     .floor()
                     .clamp(1, 4)
                     .toInt();
-                final spacing = 12.0;
+
+                const spacing = 12.0;
                 final largura =
-                    (constraints.maxWidth - spacing * (columns - 1)) / columns;
+                    (constraints.maxWidth - spacing * (columns - 1)) /
+                    columns;
 
                 return Wrap(
                   spacing: spacing,
@@ -85,8 +91,9 @@ class SecaoImoveis extends StatelessWidget {
                     return SizedBox(
                       width: largura,
                       child: ImovelCard(
-                        imovel: imovel,
+                        imovel: imovel.toSearchCardData(),
                         onReservar: () => onReservar(imovel),
+                        onTap: () => onImovelPressed(imovel),
                       ),
                     );
                   }).toList(),

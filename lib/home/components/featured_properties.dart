@@ -7,12 +7,15 @@ class FeaturedProperties extends StatelessWidget {
   final List<Property> imoveis;
   final ValueChanged<Property> onFavoritoPressed, onReservarPressed;
   final VoidCallback onVerTodosPressed;
+  final ValueChanged<Property> onImovelPressed;
+
   const FeaturedProperties({
     super.key,
     required this.imoveis,
     required this.onFavoritoPressed,
     required this.onReservarPressed,
     required this.onVerTodosPressed,
+    required this.onImovelPressed,
   });
 
   @override
@@ -81,6 +84,7 @@ class FeaturedProperties extends StatelessWidget {
 
   Widget _card(Property property) => PropertyCard(
     property: property,
+    onTap: () => onImovelPressed(property),
     onFavoritoPressed: () => onFavoritoPressed(property),
     onReservarPressed: () => onReservarPressed(property),
   );

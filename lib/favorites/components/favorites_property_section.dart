@@ -9,6 +9,7 @@ class FavoritesPropertySection extends StatelessWidget {
   final ValueChanged<Property> onFavoritoPressed;
   final ValueChanged<Property> onReservarPressed;
   final VoidCallback onVerTodosPressed;
+  final ValueChanged<Property> onImovelPressed;
 
   const FavoritesPropertySection({
     super.key,
@@ -17,6 +18,7 @@ class FavoritesPropertySection extends StatelessWidget {
     required this.onFavoritoPressed,
     required this.onReservarPressed,
     required this.onVerTodosPressed,
+    required this.onImovelPressed,
   });
 
   @override
@@ -120,5 +122,6 @@ class FavoritesPropertySection extends StatelessWidget {
     property: imovel,
     onFavoritoPressed: () => onFavoritoPressed(imovel),
     onReservarPressed: () => onReservarPressed(imovel),
+    onTap: () => onImovelPressed(imovel),
   );
 }

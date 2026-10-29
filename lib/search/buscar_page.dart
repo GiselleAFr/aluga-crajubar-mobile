@@ -9,16 +9,21 @@ import 'components/secao_imoveis.dart';
 import '../home/components/home_navigation.dart';
 import '../services/property_service.dart';
 import '../responsive_content.dart';
+import '../home/models/property.dart';
+import '../properties/property_details_page.dart';
 
 class BuscarPage extends StatefulWidget {
   const BuscarPage({
     super.key,
     this.userName,
     required this.onFavoritosPressed,
+    this.onItemSelecionado,
   });
 
   final String? userName;
   final VoidCallback onFavoritosPressed;
+  final ValueChanged<int>? onItemSelecionado;
+  
 
   @override
   State<BuscarPage> createState() => _BuscarPageState();
@@ -31,7 +36,7 @@ class _BuscarPageState extends State<BuscarPage> {
   int _requestId = 0;
   bool _loading = true;
   String? _loadError;
-  List<Map<String, dynamic>> imoveis = [];
+  List<Property> imoveis = [];
 
   int categoriaSelecionada = 0;
   int indiceSelecionado = 1;
@@ -52,6 +57,14 @@ class _BuscarPageState extends State<BuscarPage> {
     'Terrenos' => 'terreno',
     _ => '',
   };
+
+  void _abrirDetalhes(Property property) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PropertyDetailsPage(property: property),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -80,9 +93,7 @@ class _BuscarPageState extends State<BuscarPage> {
       );
       if (!mounted || requestId != _requestId) return;
       setState(() {
-        imoveis = properties
-            .map((property) => property.toSearchCardData())
-            .toList();
+        imoveis = properties;
         _loading = false;
       });
     } on PropertyApiException catch (error) {
@@ -110,19 +121,26 @@ class _BuscarPageState extends State<BuscarPage> {
   }
 
   void selecionarNavegacao(int indice) {
+    if (widget.onItemSelecionado != null) {
+      widget.onItemSelecionado!(indice);
+      return;
+    }
+
     if (indice == 0 && Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
       return;
     }
 
-    if (indice == 2) {
-      widget.onFavoritosPressed();
+    if (indice == 2 && widget.onFavoritosPressed != null) {
+      widget.onFavoritosPressed!();
       return;
     }
 
     if (indice != indiceSelecionado) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Esta seção ainda não está disponível.')),
+        const SnackBar(
+          content: Text('Esta seção ainda não está disponível.'),
+        ),
       );
     }
   }
@@ -206,13 +224,12 @@ class _BuscarPageState extends State<BuscarPage> {
                         titulo: 'DESTAQUES',
                         subtitulo: 'As melhores opções de aluguel',
                         imoveis: encontrados,
+                        onImovelPressed: _abrirDetalhes,
                         onVerTodos: () {},
                         onReservar: (imovel) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                'Imóvel selecionado: ${imovel['nome']}',
-                              ),
+                              content: Text('Imóvel selecionado: ${imovel.nome}'),
                             ),
                           );
                         },
@@ -224,13 +241,12 @@ class _BuscarPageState extends State<BuscarPage> {
                         titulo: 'PERTO DE VOCÊ',
                         subtitulo: 'As melhores opções da região',
                         imoveis: encontrados.reversed.toList(),
+                        onImovelPressed: _abrirDetalhes,
                         onVerTodos: () {},
                         onReservar: (imovel) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                'Imóvel selecionado: ${imovel['nome']}',
-                              ),
+                              content: Text('Imóvel selecionado: ${imovel.nome}'),
                             ),
                           );
                         },

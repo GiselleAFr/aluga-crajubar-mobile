@@ -13,6 +13,7 @@ import 'components/categories_section.dart';
 import 'components/home_navigation.dart';
 import '../services/auth_service.dart';
 import '../services/property_service.dart';
+import '../properties/property_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.user});
@@ -74,6 +75,14 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     _fetchProperties();
+  }
+
+  void _abrirDetalhes(Property property) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PropertyDetailsPage(property: property),
+      ),
+    );
   }
 
   Future<void> _fetchProperties() async {
@@ -157,22 +166,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _selecionarNavegacao(int indice) {
-    if (indice == 1) {
-      _abrirBusca();
-      return;
-    }
-
-    if (indice == 2) {
-      _abrirFavoritos();
-      return;
-    }
-
-    if (indice == 3 || indice == 4) {
-      _abrirConta(indice);
-      return;
-    }
-
-    setState(() => _navIndex = indice);
+    switch (indice) {
+      case 0:
+        setState(() => _navIndex = 0);
+        break;
+      case 1:
+        _abrirBusca();
+        break;
+      case 2:
+        _abrirFavoritos();
+        break;
+      case 3:
+      case 4:
+        _abrirConta(indice);
+        break;
+    } 
   }
 
   void _abrirConta(int indice) {
@@ -185,12 +193,18 @@ class _HomePageState extends State<HomePage> {
           indiceSelecionado: indice,
           onLogout: _sairDaConta,
           onItemSelecionado: (selectedIndex) {
-            if (selectedIndex == 4) return;
+            if (selectedIndex == indice) return;
+
             Navigator.of(context).pop();
-            if (selectedIndex == 1) {
+
+            if (selectedIndex == 0) {
+              setState(() => _navIndex = 0);
+            } else if (selectedIndex == 1) {
               _abrirBusca();
             } else if (selectedIndex == 2) {
               _abrirFavoritos();
+            } else if (selectedIndex == 3 || selectedIndex == 4) {
+              _abrirConta(selectedIndex);
             }
           },
         ),
@@ -217,6 +231,10 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute<void>(
         builder: (_) => BuscarPage(
           userName: widget.user?.name,
+          onItemSelecionado: (indice) {
+            Navigator.of(context).pop();
+            _selecionarNavegacao(indice);
+          },
           onFavoritosPressed: () {
             Navigator.of(context).pop();
             _abrirFavoritos();
@@ -236,12 +254,8 @@ class _HomePageState extends State<HomePage> {
               setState(() => property.favorito = !property.favorito),
           onReservarPressed: _showProperty,
           onItemSelecionado: (selectedIndex) {
-            if (selectedIndex == 0) {
-              Navigator.of(context).pop();
-            } else if (selectedIndex == 1) {
-              Navigator.of(context).pop();
-              _abrirBusca();
-            }
+            Navigator.of(context).pop();
+            _selecionarNavegacao(selectedIndex);
           },
         ),
       ),
@@ -302,6 +316,7 @@ class _HomePageState extends State<HomePage> {
                         });
                         _loadProperties();
                       },
+                      onImovelPressed: _abrirDetalhes,
                     ),
                   CategoriesSection(
                     categorias: _categories,

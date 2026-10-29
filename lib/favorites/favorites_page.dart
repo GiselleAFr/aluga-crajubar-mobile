@@ -6,6 +6,7 @@ import '../responsive_content.dart';
 import 'components/favorites_header.dart';
 import 'components/favorites_categories.dart';
 import 'components/favorites_property_section.dart';
+import '../properties/property_details_page.dart';
 
 class FavoritesPage extends StatefulWidget {
   final List<Property> imoveis;
@@ -37,6 +38,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
     'Comerciais',
     'Terrenos',
   ];
+
+  void _abrirDetalhes(Property property) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => PropertyDetailsPage(property: property),
+      ),
+    );
+  }
 
   List<Property> get imoveisFavoritos {
     return widget.imoveis.where((imovel) {
@@ -87,6 +96,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         imoveis: filtrados,
                         onFavoritoPressed: _alternarFavorito,
                         onReservarPressed: widget.onReservarPressed,
+                        onImovelPressed: _abrirDetalhes,
                         onVerTodosPressed: () {
                           setState(() {
                             categoriaSelecionada = 0;
@@ -99,6 +109,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         imoveis: favoritos.reversed.toList(),
                         onFavoritoPressed: _alternarFavorito,
                         onReservarPressed: widget.onReservarPressed,
+                        onImovelPressed: _abrirDetalhes,
                         onVerTodosPressed: () {
                           setState(() {
                             categoriaSelecionada = 0;

@@ -4,7 +4,14 @@ class Property {
   final String? imagem;
   final double preco;
   final double? nota;
+
+  final String? descricao;
+  final String? endereco;
+  final int quartos;
+  final int banheiros;
+  final double? area;
   bool favorito;
+
 
   Property({
     required this.id,
@@ -16,6 +23,12 @@ class Property {
     required this.imagem,
     required this.preco,
     required this.nota,
+    required this.descricao,
+
+    required this.endereco,
+    required this.quartos,
+    required this.banheiros,
+    required this.area,
     this.favorito = false,
   });
 
@@ -38,13 +51,21 @@ class Property {
       },
       tipo: tipo,
       unidadePreco:
-          json['unidade_preco'] as String? ??
-          (json['finalidade'] == 'diaria' ? 'dia' : 'mes'),
+        json['unidade_preco'] as String? ??
+        (json['finalidade'] == 'diaria' ? 'dia' : 'mes'),
       imagem: json['imagem'] as String?,
       preco: double.tryParse(json['preco']?.toString() ?? '') ?? 0,
       nota: json['avaliacao'] == null
           ? null
           : double.tryParse(json['avaliacao'].toString()),
+      
+      descricao: json['descricao'] as String?,
+      endereco: json['endereco'] as String?,
+      quartos: (json['quartos'] as num?)?.toInt() ?? 0,
+      banheiros: (json['banheiros'] as num?)?.toInt() ?? 0,
+      area: json['area'] == null
+          ? null
+          : double.tryParse(json['area'].toString()),
     );
   }
 
