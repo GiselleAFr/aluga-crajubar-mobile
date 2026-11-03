@@ -14,6 +14,7 @@ import 'components/home_navigation.dart';
 import '../services/auth_service.dart';
 import '../services/property_service.dart';
 import '../properties/property_details_page.dart';
+import '../reservation/reservations_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.user});
@@ -165,7 +166,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _selecionarNavegacao(int indice) {
+    void _selecionarNavegacao(int indice) {
     switch (indice) {
       case 0:
         setState(() => _navIndex = 0);
@@ -177,10 +178,26 @@ class _HomePageState extends State<HomePage> {
         _abrirFavoritos();
         break;
       case 3:
+        _abrirReservas();
+        break;
       case 4:
         _abrirConta(indice);
         break;
-    } 
+    }
+  }
+
+  void _abrirReservas() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReservationsPage(
+          onEncontrarHospedagens: _abrirBusca,
+          onItemSelecionado: (selectedIndex) {
+            Navigator.of(context).pop();
+            _selecionarNavegacao(selectedIndex);
+          },
+        ),
+      ),
+    );
   }
 
   void _abrirConta(int indice) {
@@ -203,8 +220,10 @@ class _HomePageState extends State<HomePage> {
               _abrirBusca();
             } else if (selectedIndex == 2) {
               _abrirFavoritos();
-            } else if (selectedIndex == 3 || selectedIndex == 4) {
-              _abrirConta(selectedIndex);
+            } else if (selectedIndex == 3) {
+              _abrirReservas();
+            } else if (selectedIndex == 4) {
+              _abrirConta(4);
             }
           },
         ),

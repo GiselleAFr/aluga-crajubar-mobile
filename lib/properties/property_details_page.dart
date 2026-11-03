@@ -22,8 +22,8 @@ class PropertyDetailsPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
         title: const Text('Detalhes do imóvel'),
-        backgroundColor: Colors.white,
-        foregroundColor: primaryColor,
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
