@@ -1,3 +1,5 @@
+import '../../favorites/favorites_store.dart';
+
 class Property {
   final int id;
   final String nome, local, categoria, tipo, unidadePreco;
@@ -10,8 +12,19 @@ class Property {
   final int quartos;
   final int banheiros;
   final double? area;
-  bool favorito;
+  /// Estado de favorito compartilhado: todas as cópias do mesmo imóvel
+  /// (Home, Buscar, Favoritos) enxergam o mesmo valor.
+  bool get favorito => FavoritesStore.instance.isFavorite(id);
+  set favorito(bool value) => FavoritesStore.instance.setFavorite(this, value);
 
+  /// 'aluguel' ou 'venda'.
+  final String? finalidade;
+
+  /// 'diaria' ou 'mensal' (apenas para aluguel).
+  final String? periodoLocacao;
+
+  final String? locadorNome;
+  final String? locadorTelefone;
 
   Property({
     required this.id,
@@ -24,16 +37,27 @@ class Property {
     required this.preco,
     required this.nota,
     required this.descricao,
-
     required this.endereco,
     required this.quartos,
     required this.banheiros,
     required this.area,
-    this.favorito = false,
-  });
+    bool favorito = false,
+    this.finalidade,
+    this.periodoLocacao,
+    this.locadorNome,
+    this.locadorTelefone,
+  }) {
+    if (favorito) this.favorito = true;
+  }
 
   factory Property.fromJson(Map<String, dynamic> json) {
     final tipo = json['tipo'] as String? ?? 'outro';
+
+    // A API envia o dono do imóvel em "proprietario" (id, name, phone).
+    final proprietarioRaw = json['proprietario'] ?? json['locador'];
+    final proprietario =
+        proprietarioRaw is Map<String, dynamic> ? proprietarioRaw : null;
+
     return Property(
       id: (json['id'] as num).toInt(),
       nome: json['titulo'] as String? ?? 'Imóvel',
@@ -51,14 +75,13 @@ class Property {
       },
       tipo: tipo,
       unidadePreco:
-        json['unidade_preco'] as String? ??
-        (json['finalidade'] == 'diaria' ? 'dia' : 'mes'),
+          json['unidade_preco'] as String? ??
+          (json['periodo_locacao'] == 'diaria' ? 'dia' : 'mes'),
       imagem: json['imagem'] as String?,
       preco: double.tryParse(json['preco']?.toString() ?? '') ?? 0,
       nota: json['avaliacao'] == null
           ? null
           : double.tryParse(json['avaliacao'].toString()),
-      
       descricao: json['descricao'] as String?,
       endereco: json['endereco'] as String?,
       quartos: (json['quartos'] as num?)?.toInt() ?? 0,
@@ -66,6 +89,11 @@ class Property {
       area: json['area'] == null
           ? null
           : double.tryParse(json['area'].toString()),
+      finalidade: json['finalidade'] as String?,
+      periodoLocacao: json['periodo_locacao'] as String?,
+      locadorNome: proprietario?['name'] as String?,
+      locadorTelefone: (proprietario?['phone'] ?? proprietario?['telefone'])
+          ?.toString(),
     );
   }
 
@@ -86,4 +114,12 @@ class Property {
     'total' => 'total',
     _ => '/$unidadePreco',
   };
+
+  /// O imóvel pode receber solicitação de reserva?
+  bool get aceitaReserva =>
+      finalidade == 'aluguel' &&
+      (periodoLocacao == 'diaria' || periodoLocacao == 'mensal') &&
+      preco > 0;
+
+  bool get isMensal => periodoLocacao == 'mensal';
 }

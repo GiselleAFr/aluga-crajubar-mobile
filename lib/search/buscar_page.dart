@@ -2,35 +2,39 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'components/buscar_header.dart';
-import 'components/campo_busca.dart';
 import 'components/categoria_imoveis.dart';
 import 'components/secao_imoveis.dart';
+import '../home/components/home_header.dart';
 import '../home/components/home_navigation.dart';
 import '../services/property_service.dart';
 import '../responsive_content.dart';
 import '../home/models/property.dart';
 import '../properties/property_details_page.dart';
+import '../properties/property_sheet.dart';
+import '../favorites/favorites_store.dart';
 
 class BuscarPage extends StatefulWidget {
   const BuscarPage({
     super.key,
     this.userName,
+    this.termoInicial,
     required this.onFavoritosPressed,
     this.onItemSelecionado,
   });
 
   final String? userName;
+
+  /// Termo vindo da busca da Home (a pesquisa já abre preenchida).
+  final String? termoInicial;
   final VoidCallback onFavoritosPressed;
   final ValueChanged<int>? onItemSelecionado;
-  
 
   @override
   State<BuscarPage> createState() => _BuscarPageState();
 }
 
 class _BuscarPageState extends State<BuscarPage> {
-  final TextEditingController buscaController = TextEditingController();
+  late final TextEditingController buscaController;
   final PropertyService _propertyService = PropertyService();
   Timer? _searchDebounce;
   int _requestId = 0;
@@ -42,6 +46,7 @@ class _BuscarPageState extends State<BuscarPage> {
   int indiceSelecionado = 1;
 
   final List<String> categorias = [
+    'Todos',
     'Casas',
     'Apartamentos',
     'Quartos e pousadas',
@@ -58,6 +63,10 @@ class _BuscarPageState extends State<BuscarPage> {
     _ => '',
   };
 
+  /// Há texto digitado ou categoria diferente de "Todos"?
+  bool get _temFiltro =>
+      categoriaSelecionada != 0 || buscaController.text.trim().isNotEmpty;
+
   void _abrirDetalhes(Property property) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -69,18 +78,29 @@ class _BuscarPageState extends State<BuscarPage> {
   @override
   void initState() {
     super.initState();
+    buscaController = TextEditingController(text: widget.termoInicial ?? '');
     _loadProperties();
   }
 
-  Future<void> _loadProperties({bool debounce = false}) async {
+  @override
+  void dispose() {
     _searchDebounce?.cancel();
-    if (debounce) {
-      _searchDebounce = Timer(
-        const Duration(milliseconds: 350),
-        () => _loadProperties(),
-      );
-      return;
-    }
+    _propertyService.close();
+    buscaController.dispose();
+    super.dispose();
+  }
+
+  /// Espera o usuário parar de digitar antes de consultar a API.
+  void _agendarBusca() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 350),
+      _loadProperties,
+    );
+  }
+
+  Future<void> _loadProperties() async {
+    _searchDebounce?.cancel();
     final requestId = ++_requestId;
     setState(() {
       _loading = true;
@@ -102,25 +122,29 @@ class _BuscarPageState extends State<BuscarPage> {
         _loadError = error.message;
         _loading = false;
       });
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = 'Não foi possível carregar os imóveis.';
+        _loading = false;
+      });
     }
   }
 
-  @override
-  void dispose() {
-    _searchDebounce?.cancel();
-    _propertyService.close();
-    buscaController.dispose();
-    super.dispose();
+  void selecionarCategoria(int indice) {
+    setState(() => categoriaSelecionada = indice);
+    _loadProperties();
   }
 
-  void selecionarCategoria(int indice) {
-    setState(() {
-      categoriaSelecionada = indice;
-    });
+  void _limparFiltros() {
+    buscaController.clear();
+    setState(() => categoriaSelecionada = 0);
     _loadProperties();
   }
 
   void selecionarNavegacao(int indice) {
+    if (indice == indiceSelecionado) return;
+
     if (widget.onItemSelecionado != null) {
       widget.onItemSelecionado!(indice);
       return;
@@ -136,18 +160,14 @@ class _BuscarPageState extends State<BuscarPage> {
       return;
     }
 
-    if (indice != indiceSelecionado) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Esta seção ainda não está disponível.'),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Esta seção ainda não está disponível.')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final encontrados = imoveis;
+    final total = imoveis.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7F7),
@@ -155,18 +175,24 @@ class _BuscarPageState extends State<BuscarPage> {
         bottom: false,
         child: Column(
           children: [
-            BuscarHeader(userName: widget.userName),
-
+            HomeHeader(
+              nomeUsuario: widget.userName ?? 'viajante',
+              controller: buscaController,
+              onBuscaAlterada: (_) => _agendarBusca(),
+              onBuscaEnviada: (_) => _loadProperties(),
+            ),
             Expanded(
               child: ResponsiveContent(
                 maxWidth: 1200,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ListView(
                   padding: EdgeInsets.zero,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                      child: const Text(
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(12, 16, 12, 0),
+                      child: Text(
                         'Buscar Imóveis',
                         style: TextStyle(
                           color: Color(0xFFA83232),
@@ -175,19 +201,7 @@ class _BuscarPageState extends State<BuscarPage> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 8),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: CampoBusca(
-                        controller: buscaController,
-                        onChanged: (_) => _loadProperties(debounce: true),
-                      ),
-                    ),
-
                     const SizedBox(height: 10),
-
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: CategoriaImoveis(
@@ -196,9 +210,7 @@ class _BuscarPageState extends State<BuscarPage> {
                         onSelecionar: selecionarCategoria,
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
+                    const SizedBox(height: 14),
                     if (_loading)
                       const Padding(
                         padding: EdgeInsets.all(36),
@@ -219,41 +231,22 @@ class _BuscarPageState extends State<BuscarPage> {
                           ),
                         ),
                       )
-                    else ...[
+                    else
                       SecaoImoveis(
-                        titulo: 'DESTAQUES',
-                        subtitulo: 'As melhores opções de aluguel',
-                        imoveis: encontrados,
+                        titulo: 'RESULTADOS',
+                        subtitulo: total == 1
+                            ? '1 imóvel encontrado'
+                            : '$total imóveis encontrados',
+                        imoveis: imoveis,
                         onImovelPressed: _abrirDetalhes,
-                        onVerTodos: () {},
-                        onReservar: (imovel) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Imóvel selecionado: ${imovel.nome}'),
-                            ),
-                          );
-                        },
+                        onVerTodos: _temFiltro ? _limparFiltros : null,
+                        onReservar: (imovel) =>
+                            showPropertySheet(context, imovel),
+                        onFavorito: (imovel) => setState(
+                          () => FavoritesStore.instance.toggle(imovel),
+                        ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      SecaoImoveis(
-                        titulo: 'PERTO DE VOCÊ',
-                        subtitulo: 'As melhores opções da região',
-                        imoveis: encontrados.reversed.toList(),
-                        onImovelPressed: _abrirDetalhes,
-                        onVerTodos: () {},
-                        onReservar: (imovel) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Imóvel selecionado: ${imovel.nome}'),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

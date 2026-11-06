@@ -1,19 +1,19 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
+import '../favorites/favorites_store.dart';
 import '../login/login/login.dart';
 import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
 import 'components/featured_properties.dart';
-import 'components/categories_section.dart';
 import 'components/home_navigation.dart';
+import '../responsive_content.dart';
 import '../services/auth_service.dart';
 import '../services/property_service.dart';
 import '../properties/property_details_page.dart';
+import '../properties/property_sheet.dart';
 import '../reservation/reservations_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -26,56 +26,26 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
-  int _categoryIndex = 0;
-  String _search = '';
-  final _categories = const [
-    'Casas',
-    'Apartamentos',
-    'Quartos e pousadas',
-    'Comerciais',
-    'Terrenos',
-  ];
   final _authService = AuthService();
   final _propertyService = PropertyService();
+  final _buscaController = TextEditingController();
   final List<Property> _properties = [];
-  Timer? _searchDebounce;
   int _requestId = 0;
   bool _loading = true;
   String? _loadError;
 
-  String get _selectedTypes => switch (_categories[_categoryIndex]) {
-    'Casas' => 'casa',
-    'Apartamentos' => 'apartamento',
-    'Quartos e pousadas' => 'quarto,pousada,kitnet',
-    'Comerciais' => 'comercial',
-    'Terrenos' => 'terreno',
-    _ => '',
-  };
-
   @override
   void initState() {
     super.initState();
-    _loadProperties();
+    _fetchProperties();
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
+    _buscaController.dispose();
     _propertyService.close();
     _authService.close();
     super.dispose();
-  }
-
-  void _loadProperties({bool debounce = false}) {
-    _searchDebounce?.cancel();
-    if (debounce) {
-      _searchDebounce = Timer(
-        const Duration(milliseconds: 350),
-        _fetchProperties,
-      );
-      return;
-    }
-    _fetchProperties();
   }
 
   void _abrirDetalhes(Property property) {
@@ -93,10 +63,8 @@ class _HomePageState extends State<HomePage> {
       _loadError = null;
     });
     try {
-      final results = await _propertyService.search(
-        query: _search,
-        types: _selectedTypes,
-      );
+      // A Home mostra apenas os imóveis para aluguel (destaques).
+      final results = await _propertyService.search(finalidade: 'aluguel');
       if (!mounted || requestId != _requestId) return;
       setState(() {
         _properties
@@ -110,63 +78,27 @@ class _HomePageState extends State<HomePage> {
         _loadError = error.message;
         _loading = false;
       });
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = 'Não foi possível carregar os imóveis.';
+        _loading = false;
+      });
     }
   }
 
-  void _showProperty(Property p) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              p.nome,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(p.local),
-            const SizedBox(height: 12),
-            Text(
-              'R\$ ${p.preco.toStringAsFixed(2).replaceAll('.', ',')} ${p.periodoPreco}',
-              style: const TextStyle(
-                color: Color(0xFF963333),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF963333),
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('A reserva será integrada futuramente.'),
-                    ),
-                  );
-                },
-                child: const Text('Continuar reserva'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// BottomSheet do imóvel (agora compartilhado com a Buscar).
+  void _showProperty(Property p) => showPropertySheet(context, p);
+
+  /// Busca digitada na Home: abre a tela Buscar já com o termo.
+  void _buscarNaTelaDeBusca(String valor) {
+    final termo = valor.trim();
+    _buscaController.clear();
+    FocusScope.of(context).unfocus();
+    _abrirBusca(termo: termo.isEmpty ? null : termo);
   }
 
-    void _selecionarNavegacao(int indice) {
+  void _selecionarNavegacao(int indice) {
     switch (indice) {
       case 0:
         setState(() => _navIndex = 0);
@@ -238,6 +170,8 @@ class _HomePageState extends State<HomePage> {
       debugPrint('Não foi possível concluir o logout remoto: $error');
     }
 
+    FavoritesStore.instance.clear();
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginPage()),
@@ -245,11 +179,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _abrirBusca() {
+  void _abrirBusca({String? termo}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => BuscarPage(
           userName: widget.user?.name,
+          termoInicial: termo,
           onItemSelecionado: (indice) {
             Navigator.of(context).pop();
             _selecionarNavegacao(indice);
@@ -267,10 +202,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => FavoritesPage(
-          imoveis: _properties,
           userName: widget.user?.name ?? 'viajante',
-          onFavoritoPressed: (property) =>
-              setState(() => property.favorito = !property.favorito),
           onReservarPressed: _showProperty,
           onItemSelecionado: (selectedIndex) {
             Navigator.of(context).pop();
@@ -290,63 +222,51 @@ class _HomePageState extends State<HomePage> {
         children: [
           HomeHeader(
             nomeUsuario: widget.user?.name ?? 'viajante',
-            onBuscaAlterada: (value) {
-              setState(() => _search = value);
-              _loadProperties(debounce: true);
-            },
+            controller: _buscaController,
+            onBuscaEnviada: _buscarNaTelaDeBusca,
           ),
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_loadError != null)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Text(_loadError!, textAlign: TextAlign.center),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _loadProperties,
-                              child: const Text('Tentar novamente'),
-                            ),
-                          ],
+              child: ResponsiveContent(
+                maxWidth: 1200,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_loadError != null)
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Text(_loadError!, textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: _fetchProperties,
+                                child: const Text('Tentar novamente'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      ListenableBuilder(
+                        listenable: FavoritesStore.instance,
+                        builder: (context, _) => FeaturedProperties(
+                          imoveis: _properties,
+                          onFavoritoPressed: FavoritesStore.instance.toggle,
+                          onReservarPressed: _showProperty,
+                          onVerTodosPressed: _abrirBusca,
+                          onImovelPressed: _abrirDetalhes,
                         ),
                       ),
-                    )
-                  else
-                    FeaturedProperties(
-                      imoveis: _properties,
-                      onFavoritoPressed: (property) => setState(
-                        () => property.favorito = !property.favorito,
-                      ),
-                      onReservarPressed: _showProperty,
-                      onVerTodosPressed: () {
-                        setState(() {
-                          _categoryIndex = 0;
-                          _search = '';
-                        });
-                        _loadProperties();
-                      },
-                      onImovelPressed: _abrirDetalhes,
-                    ),
-                  CategoriesSection(
-                    categorias: _categories,
-                    categoriaSelecionada: _categoryIndex,
-                    onCategoriaSelecionada: (index) {
-                      setState(() => _categoryIndex = index);
-                      _loadProperties();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
