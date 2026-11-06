@@ -56,7 +56,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         bottom: false,
         child: Column(
           children: [
-            FavoritesHeader(nomeUsuario: widget.userName),
+            const FavoritesHeader(),
             Expanded(
               // Reconstrói sozinho quando um favorito é adicionado/removido.
               child: ListenableBuilder(
@@ -71,10 +71,12 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             .where((imovel) => imovel.categoria == categoria)
                             .toList();
 
-                  return ResponsiveContent(
-                    maxWidth: 1200,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: SingleChildScrollView(
+                  // A rolagem fica por fora: o conteúdo começa logo abaixo
+                  // do header, mesmo com poucos favoritos.
+                  return SingleChildScrollView(
+                    child: ResponsiveContent(
+                      maxWidth: 1200,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -94,8 +96,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                   ? '1 imóvel salvo'
                                   : '${filtrados.length} imóveis salvos',
                               imoveis: filtrados,
-                              mensagemVazia:
-                                  'Nenhum favorito nesta categoria.',
+                              mensagemVazia: 'Nenhum favorito nesta categoria.',
                               onVerTodos: categoriaSelecionada == 0
                                   ? null
                                   : () => setState(

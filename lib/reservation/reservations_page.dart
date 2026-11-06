@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../home/components/home_navigation.dart';
 import '../responsive_content.dart';
+import '../shared/category_chips.dart';
+import '../shared/page_header.dart';
 import '../services/reservation_service.dart';
 import 'components/reservation_card.dart';
 import 'components/reservation_detail_body.dart';
@@ -158,54 +160,10 @@ class _ReservationsPageState extends State<ReservationsPage> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 25, 22, 28),
-      decoration: const BoxDecoration(
-        color: _vinho,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-      ),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Minhas reservas',
-                  style: TextStyle(
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 7),
-                Text(
-                  'Acompanhe suas solicitações e hospedagens.',
-                  style: TextStyle(fontSize: 14, color: Colors.white70),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
-            child: const CircleAvatar(
-              radius: 17,
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: _vinho, size: 24),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildHeader() => const PageHeader(
+    titulo: 'Minhas reservas',
+    subtitulo: 'Acompanhe suas solicitações e hospedagens.',
+  );
 
   Widget _buildContent() {
     if (_loading) {
@@ -248,38 +206,16 @@ class _ReservationsPageState extends State<ReservationsPage> {
               ),
             ),
             const SizedBox(height: 10),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final f in _filtros)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text('${f.$2} (${_doStatus(f.$1).length})'),
-                        selected: _filtro == f.$1,
-                        showCheckmark: false,
-                        onSelected: (_) => setState(() {
-                          _filtro = f.$1;
-                          _filtroEscolhido = true;
-                        }),
-                        selectedColor: _vinho,
-                        backgroundColor: Colors.white,
-                        side: BorderSide(
-                          color: _filtro == f.$1
-                              ? _vinho
-                              : const Color(0xFFE8D8D1),
-                        ),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          color: _filtro == f.$1
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            CategoryChips(
+              categorias: [
+                for (final f in _filtros)
+                  '${f.$2} (${_doStatus(f.$1).length})',
+              ],
+              selecionada: _filtros.indexWhere((f) => f.$1 == _filtro),
+              onSelecionar: (index) => setState(() {
+                _filtro = _filtros[index].$1;
+                _filtroEscolhido = true;
+              }),
             ),
             const SizedBox(height: 14),
             if (lista.isEmpty)
