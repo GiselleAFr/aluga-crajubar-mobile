@@ -1,11 +1,12 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../services/reservation_service.dart';
 import '../home/components/home_navigation.dart';
+import '../responsive_content.dart';
+import '../services/reservation_service.dart';
+import 'components/reservation_card.dart';
+import 'components/reservation_detail_body.dart';
+import 'reservation_details_page.dart';
+import 'reservation_pricing.dart';
 
 class ReservationsPage extends StatefulWidget {
   final ValueChanged<int> onItemSelecionado;
@@ -22,87 +23,115 @@ class ReservationsPage extends StatefulWidget {
 }
 
 class _ReservationsPageState extends State<ReservationsPage> {
-  final ReservationService _reservationService = ReservationService();
+  static const _vinho = Color(0xFF963333);
 
-  ActiveStay? _activeStay;
+  static const List<(String, String)> _filtros = [
+    ('pending', 'Pendentes'),
+    ('confirmed', 'Confirmadas'),
+    ('rejected', 'Recusadas'),
+    ('cancelled', 'Canceladas'),
+  ];
+
+  final ReservationService _service = ReservationService();
+
+  List<Reservation> _reservas = [];
   bool _loading = true;
   String? _error;
+  String _filtro = 'pending';
+  bool _filtroEscolhido = false;
 
   @override
   void initState() {
     super.initState();
-    _carregarHospedagem();
+    _carregar();
   }
 
   @override
   void dispose() {
-    _reservationService.close();
+    _service.close();
     super.dispose();
   }
 
-  Future<void> _carregarHospedagem() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _carregar({bool silencioso = false}) async {
+    if (!silencioso) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     try {
-      final stay = await _reservationService.getActiveStay();
-
+      final lista = await _service.getReservations();
       if (!mounted) return;
-
       setState(() {
-        _activeStay = stay;
+        _reservas = lista;
+        _error = null;
         _loading = false;
+        if (!_filtroEscolhido) _filtro = _filtroInicial();
       });
     } on ReservationApiException catch (error) {
       if (!mounted) return;
-
       setState(() {
         _error = error.message;
         _loading = false;
       });
     } catch (_) {
       if (!mounted) return;
-
       setState(() {
-        _error = 'Não foi possível carregar sua hospedagem.';
+        _error = 'Não foi possível carregar suas reservas.';
         _loading = false;
       });
     }
   }
 
-  String _formatarData(DateTime? data) {
-    if (data == null) return 'Não informada';
+  /// Hospedagem atual: confirmada e com a data de hoje dentro do período.
+  Reservation? get _ativa {
+    final hoje = ReservationPricing.dateOnly(DateTime.now());
+    final candidatas = _reservas.where((r) {
+      final entrada = r.checkIn;
+      final saida = r.checkOut;
+      return r.status == 'confirmed' &&
+          entrada != null &&
+          saida != null &&
+          !entrada.isAfter(hoje) &&
+          saida.isAfter(hoje);
+    }).toList()..sort((a, b) => b.checkIn!.compareTo(a.checkIn!));
 
-    final dia = data.day.toString().padLeft(2, '0');
-    final mes = data.month.toString().padLeft(2, '0');
-    final ano = data.year;
-
-    return '$dia/$mes/$ano';
+    return candidatas.isEmpty ? null : candidatas.first;
   }
 
-  Future<void> _abrirGoogleMaps(ActiveStay stay) async {
-    if (!stay.hasCoordinates) return;
+  /// Reservas de um status, sem repetir a hospedagem atual (já exibida acima).
+  List<Reservation> _doStatus(String status) {
+    final ativaId = _ativa?.id;
+    return _reservas
+        .where((r) => r.status == status && r.id != ativaId)
+        .toList();
+  }
 
-    final latitude = stay.latitude!;
-    final longitude = stay.longitude!;
+  String _filtroInicial() {
+    for (final f in _filtros) {
+      if (_doStatus(f.$1).isNotEmpty) return f.$1;
+    }
+    return 'pending';
+  }
 
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+  String _textoVazio(String status) => switch (status) {
+    'pending' => 'Você não tem solicitações pendentes.',
+    'confirmed' => 'Você não tem reservas confirmadas.',
+    'rejected' => 'Nenhuma solicitação foi recusada.',
+    'cancelled' => 'Você não tem reservas canceladas.',
+    _ => 'Nada por aqui.',
+  };
+
+  Future<void> _abrirDetalhes(Reservation reserva) async {
+    final alterou = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => ReservationDetailsPage(reservation: reserva),
+      ),
     );
 
-    final abriu = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!abriu && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível abrir o Google Maps.'),
-        ),
-      );
+    if (alterou == true && mounted) {
+      _carregar(silencioso: true);
     }
   }
 
@@ -115,30 +144,27 @@ class _ReservationsPageState extends State<ReservationsPage> {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: _buildContent(),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
       bottomNavigationBar: HomeBottomNavigation(
         indiceSelecionado: 3,
-        onItemSelecionado: widget.onItemSelecionado,
+        onItemSelecionado: (index) {
+          if (index == 3) return;
+          widget.onItemSelecionado(index);
+        },
       ),
     );
   }
 
-  
-  
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 25, 22, 28),
       decoration: const BoxDecoration(
-        color: Color(0xFF963333),
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(28),
-        ),
+        color: _vinho,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
         children: [
@@ -156,11 +182,8 @@ class _ReservationsPageState extends State<ReservationsPage> {
                 ),
                 SizedBox(height: 7),
                 Text(
-                  'Acompanhe sua hospedagem atual.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  'Acompanhe suas solicitações e hospedagens.',
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
@@ -176,11 +199,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
             child: const CircleAvatar(
               radius: 17,
               backgroundColor: Colors.white,
-              child: Icon(
-                Icons.person,
-                color: Color(0xFF963333),
-                size: 24,
-              ),
+              child: Icon(Icons.person, color: _vinho, size: 24),
             ),
           ),
         ],
@@ -188,25 +207,106 @@ class _ReservationsPageState extends State<ReservationsPage> {
     );
   }
 
-
   Widget _buildContent() {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF963333),
+      return const Center(child: CircularProgressIndicator(color: _vinho));
+    }
+    if (_error != null) return _buildError();
+    if (_reservas.isEmpty) return _buildEmptyState();
+
+    final ativa = _ativa;
+    final lista = _doStatus(_filtro);
+
+    return RefreshIndicator(
+      color: _vinho,
+      onRefresh: () => _carregar(silencioso: true),
+      child: ResponsiveContent(
+        maxWidth: 900,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(18),
+          children: [
+            if (ativa != null) ...[
+              const Text(
+                'Hospedagem atual',
+                style: TextStyle(
+                  color: _vinho,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ReservationDetailBody(reservation: ativa),
+              const SizedBox(height: 30),
+            ],
+            const Text(
+              'Minhas solicitações',
+              style: TextStyle(
+                color: _vinho,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final f in _filtros)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('${f.$2} (${_doStatus(f.$1).length})'),
+                        selected: _filtro == f.$1,
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() {
+                          _filtro = f.$1;
+                          _filtroEscolhido = true;
+                        }),
+                        selectedColor: _vinho,
+                        backgroundColor: Colors.white,
+                        side: BorderSide(
+                          color: _filtro == f.$1
+                              ? _vinho
+                              : const Color(0xFFE8D8D1),
+                        ),
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          color: _filtro == f.$1
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (lista.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 30),
+                child: Center(
+                  child: Text(
+                    _textoVazio(_filtro),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ),
+              )
+            else
+              for (final reserva in lista)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ReservationCard(
+                    reservation: reserva,
+                    onTap: () => _abrirDetalhes(reserva),
+                  ),
+                ),
+            const SizedBox(height: 20),
+          ],
         ),
-      );
-    }
-
-    if (_error != null) {
-      return _buildError();
-    }
-
-    if (_activeStay == null) {
-      return _buildEmptyState();
-    }
-
-    return _buildActiveStay(_activeStay!);
+      ),
+    );
   }
 
   Widget _buildError() {
@@ -216,19 +316,12 @@ class _ReservationsPageState extends State<ReservationsPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.cloud_off_outlined,
-              size: 55,
-              color: Colors.grey,
-            ),
+            const Icon(Icons.cloud_off_outlined, size: 55, color: Colors.grey),
             const SizedBox(height: 15),
             const Text(
               'Não foi possível carregar suas reservas.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -238,9 +331,9 @@ class _ReservationsPageState extends State<ReservationsPage> {
             ),
             const SizedBox(height: 18),
             ElevatedButton(
-              onPressed: _carregarHospedagem,
+              onPressed: _carregar,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF963333),
+                backgroundColor: _vinho,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Tentar novamente'),
@@ -264,11 +357,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
               color: const Color(0xFFE9E1D9),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: const Icon(
-              Icons.travel_explore,
-              size: 100,
-              color: Color(0xFF963333),
-            ),
+            child: const Icon(Icons.travel_explore, size: 100, color: _vinho),
           ),
           const SizedBox(height: 28),
           const Text(
@@ -282,14 +371,10 @@ class _ReservationsPageState extends State<ReservationsPage> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Você ainda não está hospedado? Encontre agora mesmo '
+            'Você ainda não tem reservas. Encontre agora mesmo '
             'o lugar ideal para sua estadia no Crajubar!',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.5,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey),
           ),
           const SizedBox(height: 25),
           SizedBox(
@@ -299,7 +384,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
               icon: const Icon(Icons.search),
               label: const Text('Encontrar hospedagens'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF963333),
+                backgroundColor: _vinho,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
@@ -310,218 +395,6 @@ class _ReservationsPageState extends State<ReservationsPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildActiveStay(ActiveStay stay) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Você está hospedado em:',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stay.propertyName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 9),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: Color(0xFF963333),
-                    ),
-                    const SizedBox(width: 7),
-                    Expanded(
-                      child: Text(
-                        [
-                          if (stay.address != null &&
-                              stay.address!.isNotEmpty)
-                            stay.address,
-                          if (stay.neighborhood != null &&
-                              stay.neighborhood!.isNotEmpty)
-                            stay.neighborhood,
-                          stay.city,
-                        ].whereType<String>().join(', '),
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 25),
-                _infoRow(
-                  Icons.calendar_month_outlined,
-                  'Entrada',
-                  _formatarData(stay.checkIn),
-                ),
-                const SizedBox(height: 12),
-                _infoRow(
-                  Icons.event_available_outlined,
-                  'Saída',
-                  _formatarData(stay.checkOut),
-                ),
-                const SizedBox(height: 12),
-                _infoRow(
-                  Icons.people_outline,
-                  'Hóspedes',
-                  '${stay.guests}',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'Localização da hospedagem',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (stay.hasCoordinates)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                height: 260,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: LatLng(
-                      stay.latitude!,
-                      stay.longitude!,
-                    ),
-                    initialZoom: 15,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.aluga_crajubar',
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: LatLng(
-                            stay.latitude!,
-                            stay.longitude!,
-                          ),
-                          width: 45,
-                          height: 45,
-                          child: const Icon(
-                            Icons.location_on,
-                            color: Color(0xFF963333),
-                            size: 42,
-                          ),
-                        ),
-                      ],
-                    ),
-                    RichAttributionWidget(
-                      attributions: [
-                        TextSourceAttribution(
-                          'OpenStreetMap contributors',
-                          onTap: () => launchUrl(
-                            Uri.parse('https://www.openstreetmap.org/copyright'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.location_off_outlined,
-                    size: 42,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'A localização deste imóvel ainda não está disponível.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          const SizedBox(height: 16),
-          if (stay.hasCoordinates)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _abrirGoogleMaps(stay),
-                icon: const Icon(Icons.directions),
-                label: const Text('Ver rota no Google Maps'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF963333),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: Color(0xFF963333)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: const Color(0xFF963333), size: 21),
-        const SizedBox(width: 9),
-        Text(
-          '$label:',
-          style: const TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ],
     );
   }
 }

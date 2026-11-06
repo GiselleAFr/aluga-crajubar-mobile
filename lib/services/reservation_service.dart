@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../home/models/property.dart';
 import 'auth_service.dart' show apiBaseUrl;
 
 class ReservationApiException implements Exception {
@@ -82,6 +83,7 @@ class Reservation {
     this.currency = 'BRL',
     this.landlordName,
     this.landlordPhone,
+    this.property,
   });
 
   final int id;
@@ -99,11 +101,18 @@ class Reservation {
   final String? landlordName;
   final String? landlordPhone;
 
+  /// Imóvel completo (quando a API envia a relação). Pode ser null.
+  final Property? property;
+
   factory Reservation.fromJson(Map<String, dynamic> json) {
     final imovelRaw = json['imovel'];
     final imovel = imovelRaw is Map<String, dynamic> ? imovelRaw : null;
     final donoRaw = imovel?['proprietario'];
     final dono = donoRaw is Map<String, dynamic> ? donoRaw : null;
+
+    final property = (imovel != null && imovel['id'] is num)
+        ? Property.fromJson(imovel)
+        : null;
 
     return Reservation(
       id: (json['id'] as num).toInt(),
@@ -123,6 +132,7 @@ class Reservation {
       status: json['status'] as String? ?? 'pending',
       landlordName: dono?['name'] as String?,
       landlordPhone: dono?['phone']?.toString(),
+      property: property,
     );
   }
 

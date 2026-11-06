@@ -26,6 +26,9 @@ class Property {
   final String? locadorNome;
   final String? locadorTelefone;
 
+  final double? latitude;
+  final double? longitude;
+
   Property({
     required this.id,
     required this.nome,
@@ -46,6 +49,8 @@ class Property {
     this.periodoLocacao,
     this.locadorNome,
     this.locadorTelefone,
+    this.latitude,
+    this.longitude,
   }) {
     if (favorito) this.favorito = true;
   }
@@ -94,6 +99,8 @@ class Property {
       locadorNome: proprietario?['name'] as String?,
       locadorTelefone: (proprietario?['phone'] ?? proprietario?['telefone'])
           ?.toString(),
+      latitude: double.tryParse(json['latitude']?.toString() ?? ''),
+      longitude: double.tryParse(json['longitude']?.toString() ?? ''),
     );
   }
 
@@ -122,4 +129,6 @@ class Property {
       preco > 0;
 
   bool get isMensal => periodoLocacao == 'mensal';
+
+  bool get hasCoordinates => latitude != null && longitude != null;
 }
