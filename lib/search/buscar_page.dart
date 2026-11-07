@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'components/categoria_imoveis.dart';
 import 'components/secao_imoveis.dart';
-import '../home/components/home_header.dart';
+import '../shared/page_header.dart';
+import '../shared/search_field.dart';
 import '../home/components/home_navigation.dart';
 import '../services/property_service.dart';
 import '../responsive_content.dart';
@@ -175,11 +176,14 @@ class _BuscarPageState extends State<BuscarPage> {
         bottom: false,
         child: Column(
           children: [
-            HomeHeader(
-              nomeUsuario: widget.userName ?? 'viajante',
-              controller: buscaController,
-              onBuscaAlterada: (_) => _agendarBusca(),
-              onBuscaEnviada: (_) => _loadProperties(),
+            PageHeader(
+              titulo: 'Buscar imóveis',
+              subtitulo: 'Encontre o imóvel ideal para a sua hospedagem.',
+              child: SearchField(
+                controller: buscaController,
+                onChanged: (_) => _agendarBusca(),
+                onSubmitted: (_) => _loadProperties(),
+              ),
             ),
             Expanded(
               child: ResponsiveContent(
@@ -190,18 +194,7 @@ class _BuscarPageState extends State<BuscarPage> {
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(12, 16, 12, 0),
-                      child: Text(
-                        'Buscar Imóveis',
-                        style: TextStyle(
-                          color: Color(0xFFA83232),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: CategoriaImoveis(

@@ -22,10 +22,12 @@ class PropertyService {
 
   void close() => _client.close();
 
+  /// [ordenacao]: mais_recentes, menor_preco, maior_preco ou mais_favoritados.
   Future<List<Property>> search({
     String? query,
     String? types,
     String? finalidade,
+    String? ordenacao,
     int perPage = 100,
   }) async {
     final base = Uri.parse(apiBaseUrl);
@@ -42,6 +44,9 @@ class PropertyService {
     }
     if (finalidade != null && finalidade.isNotEmpty) {
       parameters['finalidade'] = finalidade;
+    }
+    if (ordenacao != null && ordenacao.isNotEmpty) {
+      parameters['ordenacao'] = ordenacao;
     }
     final uri = base.replace(
       path: '$basePath/imoveis',

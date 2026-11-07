@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -169,6 +170,10 @@ class ReservationService {
   static const _tokenKey = 'auth_access_token';
   static const _demoToken = 'demo-access-token';
 
+  /// Avisa outras telas (ex.: Home) que as reservas do cliente mudaram
+  /// (solicitação criada ou cancelada).
+  static final ValueNotifier<int> changes = ValueNotifier<int>(0);
+
   final http.Client _client;
   final FlutterSecureStorage _storage;
 
@@ -202,6 +207,7 @@ class ReservationService {
         'Resposta inválida ao criar a solicitação.',
       );
     }
+    changes.value++;
     return Reservation.fromJson(booking);
   }
 
@@ -264,6 +270,19 @@ class ReservationService {
   }
 
   // ---------------------------------------------------------------------------
+  // Locador: quantidade de solicitações pendentes
+  // GET /api/bookings/solicitacoes (somente role landlord)
+  // ---------------------------------------------------------------------------
+  Future<int> getPendingRequestsCount() async {
+    final data = await _send(
+      'GET',
+      '/bookings/solicitacoes',
+      query: {'per_page': '1'},
+    );
+    return (data['total'] as num?)?.toInt() ?? 0;
+  }
+
+  // ---------------------------------------------------------------------------
   // Cancelar: PATCH /api/bookings/{id}/cancelar
   // ---------------------------------------------------------------------------
   Future<Reservation> cancelBooking(int id) async {
@@ -272,6 +291,7 @@ class ReservationService {
     if (booking is! Map<String, dynamic>) {
       throw const ReservationApiException('Resposta inválida ao cancelar.');
     }
+    changes.value++;
     return Reservation.fromJson(booking);
   }
 
