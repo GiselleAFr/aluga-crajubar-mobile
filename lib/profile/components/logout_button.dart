@@ -17,7 +17,7 @@ class LogoutButton extends StatelessWidget {
       ),
       child: const Text(
         'Sair da Conta',
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
       ),
     ),
   );

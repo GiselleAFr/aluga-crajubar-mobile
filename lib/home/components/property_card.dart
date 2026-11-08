@@ -7,21 +7,42 @@ class PropertyCard extends StatelessWidget {
   final VoidCallback onFavoritoPressed, onReservarPressed;
   final VoidCallback? onTap;
 
+  /// Largura fixa do card. Use null para ocupar a largura do pai (grade).
+  final double? width;
+  final EdgeInsetsGeometry margin;
+  final double imageHeight;
+
   const PropertyCard({
     super.key,
     required this.property,
     this.onTap,
     required this.onFavoritoPressed,
     required this.onReservarPressed,
+    this.width = 164,
+    this.margin = const EdgeInsets.only(right: 12),
+    this.imageHeight = 104,
   });
+
+  Widget _placeholder() => Container(
+    height: imageHeight,
+    width: double.infinity,
+    color: const Color(0xFFE5DAD3),
+    child: const Center(
+      child: Icon(
+        Icons.home_work_outlined,
+        size: 35,
+        color: Color(0xFF963333),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
     borderRadius: BorderRadius.circular(13),
     child: Container(
-      width: 164,
-      margin: const EdgeInsets.only(right: 12),
+      width: width,
+      margin: margin,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(13),
@@ -41,35 +62,13 @@ class PropertyCard extends StatelessWidget {
           Stack(
             children: [
               property.imagem == null || property.imagem!.isEmpty
-                  ? Container(
-                      height: 104,
-                      width: double.infinity,
-                      color: const Color(0xFFE5DAD3),
-                      child: const Center(
-                        child: Icon(
-                          Icons.home_work_outlined,
-                          size: 35,
-                          color: Color(0xFF963333),
-                        ),
-                      ),
-                    )
+                  ? _placeholder()
                   : Image.network(
                       property.imagem!,
-                      height: 104,
+                      height: imageHeight,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
-                        height: 104,
-                        width: double.infinity,
-                        color: const Color(0xFFE5DAD3),
-                        child: const Center(
-                          child: Icon(
-                            Icons.home_work_outlined,
-                            size: 35,
-                            color: Color(0xFF963333),
-                          ),
-                        ),
-                      ),
+                      errorBuilder: (_, _, _) => _placeholder(),
                     ),
               if (property.nota != null)
                 Positioned(
@@ -121,7 +120,7 @@ class PropertyCard extends StatelessWidget {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 7, 8, 0),
+            padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -142,8 +141,8 @@ class PropertyCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
                 const SizedBox(height: 5),
-                RichText(
-                  text: TextSpan(
+                Text.rich(
+                  TextSpan(
                     style: const TextStyle(
                       color: Color(0xFF963333),
                       fontSize: 14,
@@ -156,10 +155,15 @@ class PropertyCard extends StatelessWidget {
                       ),
                       TextSpan(
                         text: ' ${property.periodoPreco}',
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 SizedBox(
@@ -178,7 +182,10 @@ class PropertyCard extends StatelessWidget {
                     ),
                     child: const Text(
                       'Reservar',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

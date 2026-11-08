@@ -1,20 +1,28 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
 import '../become_host/become_host_page.dart';
+import '../favorites/favorites_store.dart';
+import '../help/help_page.dart';
 import '../login/login/login.dart';
 import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
+import '../search/components/secao_imoveis.dart';
 import 'models/property.dart';
 import 'components/home_header.dart';
-import 'components/featured_properties.dart';
-import 'components/categories_section.dart';
 import 'components/home_navigation.dart';
+import 'components/home_status_card.dart';
+import 'components/how_it_works_section.dart';
+import 'components/landlord_banner.dart';
+import 'components/search_invite.dart';
+import 'home_status.dart';
+import '../responsive_content.dart';
 import '../services/auth_service.dart';
 import '../services/property_service.dart';
+import '../services/reservation_service.dart';
 import '../properties/property_details_page.dart';
+import '../properties/property_sheet.dart';
+import '../reservation/reservations_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.user});
@@ -25,57 +33,185 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  static const _vinho = Color(0xFF963333);
+
+  /// Quantidade de imóveis em cada seção da Home.
+  static const _porSecao = 4;
+
   int _navIndex = 0;
-  int _categoryIndex = 0;
-  String _search = '';
-  final _categories = const [
-    'Casas',
-    'Apartamentos',
-    'Quartos e pousadas',
-    'Comerciais',
-    'Terrenos',
-  ];
   final _authService = AuthService();
   final _propertyService = PropertyService();
-  final List<Property> _properties = [];
-  Timer? _searchDebounce;
-  int _requestId = 0;
+  final _reservationService = ReservationService();
+  final _buscaController = TextEditingController();
+
+  AuthUser? _user;
+  List<Property> _destaques = [];
+  List<Property> _recentes = [];
+  HomeStatus? _status;
   bool _loading = true;
   String? _loadError;
-
-  String get _selectedTypes => switch (_categories[_categoryIndex]) {
-    'Casas' => 'casa',
-    'Apartamentos' => 'apartamento',
-    'Quartos e pousadas' => 'quarto,pousada,kitnet',
-    'Comerciais' => 'comercial',
-    'Terrenos' => 'terreno',
-    _ => '',
-  };
+  int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadProperties();
+    _user = widget.user;
+    // Quando uma solicitação é criada ou cancelada, o card de status atualiza.
+    ReservationService.changes.addListener(_carregarStatus);
+    _carregarTudo();
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
+    ReservationService.changes.removeListener(_carregarStatus);
+    _buscaController.dispose();
     _propertyService.close();
+    _reservationService.close();
     _authService.close();
     super.dispose();
   }
 
-  void _loadProperties({bool debounce = false}) {
-    _searchDebounce?.cancel();
-    if (debounce) {
-      _searchDebounce = Timer(
-        const Duration(milliseconds: 350),
-        _fetchProperties,
-      );
-      return;
+  // ---------------------------------------------------------------------------
+  // Dados
+  // ---------------------------------------------------------------------------
+  Future<void> _carregarTudo({bool silencioso = false}) async {
+    await Future.wait([
+      _carregarImoveis(silencioso: silencioso),
+      _atualizarUsuarioEStatus(),
+    ]);
+  }
+
+  Future<void> _atualizarUsuarioEStatus() async {
+    try {
+      final atualizado = await _authService.currentUser();
+      if (mounted) setState(() => _user = atualizado);
+    } catch (_) {
+      // Mantém o usuário que veio do login.
     }
-    _fetchProperties();
+    await _carregarStatus();
+  }
+
+  Future<void> _carregarImoveis({bool silencioso = false}) async {
+    final requestId = ++_requestId;
+
+    if (!silencioso) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
+
+    try {
+      // Só imóveis para aluguel: é o que o app permite reservar.
+      final resultados = await Future.wait([
+        _propertyService.search(
+          finalidade: 'aluguel',
+          ordenacao: 'mais_favoritados',
+          perPage: 8,
+        ),
+        _propertyService.search(
+          finalidade: 'aluguel',
+          ordenacao: 'mais_recentes',
+          perPage: 12,
+        ),
+      ]);
+
+      if (!mounted || requestId != _requestId) return;
+
+      final destaques = resultados[0].take(_porSecao).toList();
+      final idsDestaque = destaques.map((p) => p.id).toSet();
+      // Um imóvel aparece uma única vez na Home.
+      final recentes = resultados[1]
+          .where((p) => !idsDestaque.contains(p.id))
+          .take(_porSecao)
+          .toList();
+
+      setState(() {
+        _destaques = destaques;
+        _recentes = recentes;
+        _loading = false;
+        _loadError = null;
+      });
+    } on PropertyApiException catch (error) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = error.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _loadError = 'Não foi possível carregar os imóveis.';
+        _loading = false;
+      });
+    }
+  }
+
+  /// O card de status é opcional: se algo falhar, ele simplesmente não aparece.
+  Future<void> _carregarStatus() async {
+    HomeStatus? novo;
+    final usuario = _user;
+
+    if (usuario != null && usuario.isLandlord) {
+      try {
+        final pendentes = await _reservationService.getPendingRequestsCount();
+        if (pendentes > 0) novo = HomeStatus.landlordPending(pendentes);
+      } catch (_) {}
+    }
+
+    if (novo == null) {
+      try {
+        novo = HomeStatus.fromReservations(
+          await _reservationService.getReservations(),
+        );
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() => _status = novo);
+  }
+
+  /// Mostra o banner só para quem ainda pode pedir para ser locador:
+  /// esconde de locadores, administradores e de quem já tem pedido pendente.
+  bool get _mostrarBannerLocador {
+    final usuario = _user;
+    if (usuario == null) return false;
+
+    final podeSolicitar = usuario.role != null
+        ? usuario.role == 'client'
+        : !usuario.isLandlord;
+
+    return podeSolicitar && usuario.landlordRequestStatus != 'pending';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ações
+  // ---------------------------------------------------------------------------
+  void _aviso(String mensagem) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensagem)));
+  }
+
+  // Destinos que ainda serão ligados (um ponto de troca para cada um).
+  void _abrirAjuda() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const HelpPage()),
+    );
+  }
+
+  void _abrirPedidoLocador() =>
+      _aviso('O cadastro de locador chega em breve.');
+
+  void _abrirSolicitacoesLocador() =>
+      _aviso('A tela de solicitações do locador está em desenvolvimento.');
+
+  void _abrirStatus(HomeStatus status) {
+    if (status.type == HomeStatusType.landlordPending) {
+      _abrirSolicitacoesLocador();
+    } else {
+      _abrirReservas();
+    }
   }
 
   void _abrirDetalhes(Property property) {
@@ -86,84 +222,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<void> _fetchProperties() async {
-    final requestId = ++_requestId;
-    setState(() {
-      _loading = true;
-      _loadError = null;
-    });
-    try {
-      final results = await _propertyService.search(
-        query: _search,
-        types: _selectedTypes,
-      );
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _properties
-          ..clear()
-          ..addAll(results);
-        _loading = false;
-      });
-    } on PropertyApiException catch (error) {
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _loadError = error.message;
-        _loading = false;
-      });
-    }
-  }
+  /// BottomSheet do imóvel (compartilhado com Buscar e Favoritos).
+  void _showProperty(Property p) => showPropertySheet(context, p);
 
-  void _showProperty(Property p) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              p.nome,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(p.local),
-            const SizedBox(height: 12),
-            Text(
-              'R\$ ${p.preco.toStringAsFixed(2).replaceAll('.', ',')} ${p.periodoPreco}',
-              style: const TextStyle(
-                color: Color(0xFF963333),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF963333),
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('A reserva será integrada futuramente.'),
-                    ),
-                  );
-                },
-                child: const Text('Continuar reserva'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Busca digitada na Home: abre a tela Buscar já com o termo.
+  void _buscarNaTelaDeBusca(String valor) {
+    final termo = valor.trim();
+    _buscaController.clear();
+    FocusScope.of(context).unfocus();
+    _abrirBusca(termo: termo.isEmpty ? null : termo);
   }
 
   void _selecionarNavegacao(int indice) {
@@ -178,10 +245,26 @@ class _HomePageState extends State<HomePage> {
         _abrirFavoritos();
         break;
       case 3:
+        _abrirReservas();
+        break;
       case 4:
         _abrirConta(indice);
         break;
     }
+  }
+
+  void _abrirReservas() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReservationsPage(
+          onEncontrarHospedagens: _abrirBusca,
+          onItemSelecionado: (selectedIndex) {
+            Navigator.of(context).pop();
+            _selecionarNavegacao(selectedIndex);
+          },
+        ),
+      ),
+    );
   }
 
   void _abrirConta(int indice) {
@@ -198,6 +281,7 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute<void>(builder: (_) => const BecomeHostPage()),
             );
           },
+          onAjuda: _abrirAjuda,
           onItemSelecionado: (selectedIndex) {
             if (selectedIndex == indice) return;
 
@@ -209,8 +293,10 @@ class _HomePageState extends State<HomePage> {
               _abrirBusca();
             } else if (selectedIndex == 2) {
               _abrirFavoritos();
-            } else if (selectedIndex == 3 || selectedIndex == 4) {
-              _abrirConta(selectedIndex);
+            } else if (selectedIndex == 3) {
+              _abrirReservas();
+            } else if (selectedIndex == 4) {
+              _abrirConta(4);
             }
           },
         ),
@@ -225,6 +311,8 @@ class _HomePageState extends State<HomePage> {
       debugPrint('Não foi possível concluir o logout remoto: $error');
     }
 
+    FavoritesStore.instance.clear();
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginPage()),
@@ -232,11 +320,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _abrirBusca() {
+  void _abrirBusca({String? termo}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => BuscarPage(
           userName: widget.user?.name,
+          termoInicial: termo,
           onItemSelecionado: (indice) {
             Navigator.of(context).pop();
             _selecionarNavegacao(indice);
@@ -254,10 +343,7 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => FavoritesPage(
-          imoveis: _properties,
           userName: widget.user?.name ?? 'viajante',
-          onFavoritoPressed: (property) =>
-              setState(() => property.favorito = !property.favorito),
           onReservarPressed: _showProperty,
           onItemSelecionado: (selectedIndex) {
             Navigator.of(context).pop();
@@ -268,6 +354,9 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFFF8F7F5),
@@ -276,64 +365,49 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           HomeHeader(
-            nomeUsuario: widget.user?.name ?? 'viajante',
-            onBuscaAlterada: (value) {
-              setState(() => _search = value);
-              _loadProperties(debounce: true);
-            },
+            nomeUsuario: _user?.name ?? widget.user?.name ?? 'viajante',
+            controller: _buscaController,
+            onBuscaEnviada: _buscarNaTelaDeBusca,
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (_loadError != null)
-                    Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Text(_loadError!, textAlign: TextAlign.center),
-                            const SizedBox(height: 8),
-                            TextButton(
-                              onPressed: _loadProperties,
-                              child: const Text('Tentar novamente'),
-                            ),
-                          ],
+            child: RefreshIndicator(
+              color: _vinho,
+              onRefresh: () => _carregarTudo(silencioso: true),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ResponsiveContent(
+                  maxWidth: 1200,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: HowItWorksSection(onAjudaPressed: _abrirAjuda),
+                      ),
+                      if (_status case final status?)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                          child: HomeStatusCard(
+                            status: status,
+                            onTap: () => _abrirStatus(status),
+                          ),
                         ),
+                      const SizedBox(height: 22),
+                      _buildImoveis(),
+                      if (_mostrarBannerLocador)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 26, 18, 0),
+                          child: LandlordBanner(onPressed: _abrirPedidoLocador),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 26, 18, 0),
+                        child: SearchInvite(onPressed: _abrirBusca),
                       ),
-                    )
-                  else
-                    FeaturedProperties(
-                      imoveis: _properties,
-                      onFavoritoPressed: (property) => setState(
-                        () => property.favorito = !property.favorito,
-                      ),
-                      onReservarPressed: _showProperty,
-                      onVerTodosPressed: () {
-                        setState(() {
-                          _categoryIndex = 0;
-                          _search = '';
-                        });
-                        _loadProperties();
-                      },
-                      onImovelPressed: _abrirDetalhes,
-                    ),
-                  CategoriesSection(
-                    categorias: _categories,
-                    categoriaSelecionada: _categoryIndex,
-                    onCategoriaSelecionada: (index) {
-                      setState(() => _categoryIndex = index);
-                      _loadProperties();
-                    },
+                      const SizedBox(height: 28),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           ),
@@ -345,4 +419,78 @@ class _HomePageState extends State<HomePage> {
       onItemSelecionado: _selecionarNavegacao,
     ),
   );
+
+  Widget _buildImoveis() {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator(color: _vinho)),
+      );
+    }
+
+    if (_loadError != null) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Center(
+          child: Column(
+            children: [
+              Text(_loadError!, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _carregarImoveis,
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_destaques.isEmpty && _recentes.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 30, horizontal: 18),
+        child: Center(
+          child: Text(
+            'Nenhum imóvel disponível no momento.',
+            style: TextStyle(color: Colors.black54),
+          ),
+        ),
+      );
+    }
+
+    // Os corações se atualizam sozinhos quando um favorito muda.
+    return ListenableBuilder(
+      listenable: FavoritesStore.instance,
+      builder: (context, _) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_destaques.isNotEmpty)
+              SecaoImoveis(
+                titulo: 'DESTAQUES',
+                subtitulo: 'Os mais favoritados pelos hóspedes',
+                imoveis: _destaques,
+                onVerTodos: _abrirBusca,
+                onReservar: _showProperty,
+                onImovelPressed: _abrirDetalhes,
+                onFavorito: FavoritesStore.instance.toggle,
+              ),
+            if (_destaques.isNotEmpty && _recentes.isNotEmpty)
+              const SizedBox(height: 24),
+            if (_recentes.isNotEmpty)
+              SecaoImoveis(
+                titulo: 'ADICIONADOS RECENTEMENTE',
+                subtitulo: 'Novidades para alugar no Crajubar',
+                imoveis: _recentes,
+                onVerTodos: _abrirBusca,
+                onReservar: _showProperty,
+                onImovelPressed: _abrirDetalhes,
+                onFavorito: FavoritesStore.instance.toggle,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

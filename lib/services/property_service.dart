@@ -22,18 +22,31 @@ class PropertyService {
 
   void close() => _client.close();
 
-  Future<List<Property>> search({String? query, String? types}) async {
+  /// [ordenacao]: mais_recentes, menor_preco, maior_preco ou mais_favoritados.
+  Future<List<Property>> search({
+    String? query,
+    String? types,
+    String? finalidade,
+    String? ordenacao,
+    int perPage = 100,
+  }) async {
     final base = Uri.parse(apiBaseUrl);
     final basePath = base.path.endsWith('/')
         ? base.path.substring(0, base.path.length - 1)
         : base.path;
-    final parameters = <String, String>{'per_page': '100'};
+    final parameters = <String, String>{'per_page': '$perPage'};
     final normalizedQuery = query?.trim();
     if (normalizedQuery != null && normalizedQuery.isNotEmpty) {
       parameters['q'] = normalizedQuery;
     }
     if (types != null && types.isNotEmpty) {
       parameters['tipo'] = types;
+    }
+    if (finalidade != null && finalidade.isNotEmpty) {
+      parameters['finalidade'] = finalidade;
+    }
+    if (ordenacao != null && ordenacao.isNotEmpty) {
+      parameters['ordenacao'] = ordenacao;
     }
     final uri = base.replace(
       path: '$basePath/imoveis',

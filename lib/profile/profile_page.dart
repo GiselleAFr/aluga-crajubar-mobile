@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../services/auth_service.dart';
-import '../home/models/property.dart';
+import '../favorites/favorites_store.dart';
 import '../home/components/home_navigation.dart';
+import '../reservation/reservation_details_page.dart';
+import '../reservation/reservation_pricing.dart';
+import '../responsive_content.dart';
+import '../services/auth_service.dart';
+import '../services/reservation_service.dart';
+import '../utils/formatters.dart';
+import 'components/logout_button.dart';
 import 'components/profile_header.dart';
-import 'components/profile_summary_card.dart';
 import 'components/profile_history_section.dart';
 import 'components/profile_settings_section.dart';
-import 'components/logout_button.dart';
+import 'components/profile_summary_card.dart';
+import 'components/history_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String nomeUsuario;
   final AuthUser? user;
   final AuthService? authService;
   final int indiceSelecionado;
-  final List<Property> imoveisHistorico;
   final ValueChanged<int>? onItemSelecionado;
   final VoidCallback? onLogout;
   final VoidCallback? onInformacoesPessoais;
@@ -26,11 +31,10 @@ class ProfilePage extends StatefulWidget {
 
   const ProfilePage({
     super.key,
-    this.nomeUsuario = 'Amanda',
+    this.nomeUsuario = 'viajante',
     this.user,
     this.authService,
     this.indiceSelecionado = 4,
-    this.imoveisHistorico = const [],
     this.onItemSelecionado,
     this.onLogout,
     this.onInformacoesPessoais,
@@ -46,13 +50,24 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  static const _vinho = Color(0xFF963333);
+
+  /// Quantas hospedagens aparecem no perfil antes do "Ver todos".
+  static const _limiteHistorico = 5;
+
   late final AuthService _authService;
   late final bool _ownsAuthService;
-  AuthUser? _user;
+  final ReservationService _reservationService = ReservationService();
 
-  void _aviso(BuildContext context, String mensagem) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(mensagem)));
+  AuthUser? _user;
+  List<Reservation> _reservas = [];
+  bool _carregandoReservas = true;
+  String? _erroReservas;
+
+  void _aviso(String mensagem) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   @override
@@ -62,6 +77,14 @@ class _ProfilePageState extends State<ProfilePage> {
     _ownsAuthService = widget.authService == null;
     _authService = widget.authService ?? AuthService();
     _carregarUsuario();
+    _carregarReservas();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsAuthService) _authService.close();
+    _reservationService.close();
+    super.dispose();
   }
 
   Future<void> _carregarUsuario() async {
@@ -69,14 +92,88 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = await _authService.currentUser();
       if (mounted) setState(() => _user = user);
     } on AuthException catch (error) {
-      if (mounted && _user == null) _aviso(context, error.message);
+      if (mounted && _user == null) _aviso(error.message);
+    } catch (_) {
+      // Mantém os dados que vieram do login.
     }
   }
 
-  @override
-  void dispose() {
-    if (_ownsAuthService) _authService.close();
-    super.dispose();
+  Future<void> _carregarReservas({bool silencioso = false}) async {
+    if (!silencioso) {
+      setState(() {
+        _carregandoReservas = true;
+        _erroReservas = null;
+      });
+    }
+
+    try {
+      final lista = await _reservationService.getReservations();
+      if (!mounted) return;
+      setState(() {
+        _reservas = lista;
+        _carregandoReservas = false;
+        _erroReservas = null;
+      });
+    } on ReservationApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _erroReservas = error.message;
+        _carregandoReservas = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _erroReservas = 'Não foi possível carregar o histórico.';
+        _carregandoReservas = false;
+      });
+    }
+  }
+
+  Future<void> _atualizar() async {
+    await Future.wait([_carregarUsuario(), _carregarReservas(silencioso: true)]);
+  }
+
+  /// Hospedagens concluídas: confirmadas e com a saída já ocorrida.
+  /// A mais recente primeiro.
+  List<Reservation> get _historico {
+    final hoje = ReservationPricing.dateOnly(DateTime.now());
+    return _reservas
+        .where(
+          (r) =>
+              r.status == 'confirmed' &&
+              r.checkOut != null &&
+              !r.checkOut!.isAfter(hoje),
+        )
+        .toList()
+      ..sort((a, b) => b.checkOut!.compareTo(a.checkOut!));
+  }
+
+  int get _pendentes {
+    final hoje = ReservationPricing.dateOnly(DateTime.now());
+    return _reservas
+        .where(
+          (r) =>
+              r.status == 'pending' &&
+              r.checkIn != null &&
+              !r.checkIn!.isBefore(hoje),
+        )
+        .length;
+  }
+
+  void _abrirEstadia(Reservation reserva) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReservationDetailsPage(reservation: reserva),
+      ),
+    );
+  }
+
+  void _abrirHistoricoCompleto() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => HistoryPage(estadias: _historico),
+      ),
+    );
   }
 
   @override
@@ -84,10 +181,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final nomeUsuario = _user?.name.isNotEmpty == true
         ? _user!.name
         : widget.nomeUsuario;
-    final membroDesde = _user?.createdAt == null
+
+    final criadoEm = _user?.createdAt;
+    final membroDesde = criadoEm == null
         ? 'Membro desde —'
-        : 'Membro desde ${_user!.createdAt!.year}';
-    final historico = widget.imoveisHistorico;
+        : 'Membro desde ${dataPorExtenso(criadoEm.toLocal())}';
+
+    final historico = _historico;
+    final temDados = !_carregandoReservas && _erroReservas == null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7F5),
@@ -97,64 +198,70 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             ProfileHeader(nomeUsuario: nomeUsuario, membroDesde: membroDesde),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(13, 11, 13, 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ProfileSummaryCard(
-                      nomeUsuario: nomeUsuario,
-                      email: _user?.email ?? '',
-                      telefone: _user?.phone ?? '',
-                      onTap:
-                          widget.onInformacoesPessoais ??
-                          () =>
-                              _aviso(context, 'Informações pessoais em breve.'),
+              child: RefreshIndicator(
+                color: _vinho,
+                onRefresh: _atualizar,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: ResponsiveContent(
+                    maxWidth: 800,
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ProfileSummaryCard(
+                          nomeUsuario: nomeUsuario,
+                          email: _user?.email ?? '',
+                          telefone: _user?.phone ?? '',
+                          papel: _user?.role,
+                          hospedagens: temDados ? historico.length : null,
+                          pendentes: temDados ? _pendentes : null,
+                          favoritos: FavoritesStore.instance.count,
+                          onTap: widget.onInformacoesPessoais,
+                        ),
+                        const SizedBox(height: 22),
+                        ProfileHistorySection(
+                          estadias: historico.take(_limiteHistorico).toList(),
+                          carregando: _carregandoReservas,
+                          erro: _erroReservas,
+                          onTentarNovamente: _carregarReservas,
+                          onVerTodos: historico.length > _limiteHistorico
+                              ? _abrirHistoricoCompleto
+                              : null,
+                          onTap: _abrirEstadia,
+                        ),
+                        const SizedBox(height: 22),
+                        ProfileSettingsSection(
+                          onInformacoesPessoais:
+                              widget.onInformacoesPessoais ??
+                              () => _aviso('Informações pessoais em breve.'),
+                          onSeguranca:
+                              widget.onSeguranca ??
+                              () => _aviso('Segurança e login em breve.'),
+                          onNotificacoes:
+                              widget.onNotificacoes ??
+                              () => _aviso('Notificações em breve.'),
+                          onMetodoPagamento:
+                              widget.onMetodoPagamento ??
+                              () => _aviso('Método de pagamento em breve.'),
+                          onTornarLocador:
+                              widget.onTornarLocador ??
+                              () => _aviso('Cadastro de locador em breve.'),
+                          onAjuda:
+                              widget.onAjuda ??
+                              () => _aviso('Ajuda e suporte em breve.'),
+                        ),
+                        const SizedBox(height: 20),
+                        LogoutButton(
+                          onPressed:
+                              widget.onLogout ??
+                              () => _aviso(
+                                'Conecte aqui a função de sair da conta.',
+                              ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    ProfileHistorySection(
-                      imoveis: historico,
-                      onVerTodos: () => _aviso(
-                        context,
-                        'O histórico ainda não está disponível.',
-                      ),
-                      onImovelTap: (imovel) =>
-                          _aviso(context, 'Imóvel: ${imovel.nome}'),
-                    ),
-                    const SizedBox(height: 16),
-                    ProfileSettingsSection(
-                      onInformacoesPessoais:
-                          widget.onInformacoesPessoais ??
-                          () =>
-                              _aviso(context, 'Informações pessoais em breve.'),
-                      onSeguranca:
-                          widget.onSeguranca ??
-                          () => _aviso(context, 'Segurança e login em breve.'),
-                      onNotificacoes:
-                          widget.onNotificacoes ??
-                          () => _aviso(context, 'Notificações em breve.'),
-                      onMetodoPagamento:
-                          widget.onMetodoPagamento ??
-                          () =>
-                              _aviso(context, 'Método de pagamento em breve.'),
-                      onTornarLocador:
-                          widget.onTornarLocador ??
-                          () =>
-                              _aviso(context, 'Cadastro de locador em breve.'),
-                      onAjuda:
-                          widget.onAjuda ??
-                          () => _aviso(context, 'Ajuda e suporte em breve.'),
-                    ),
-                    const SizedBox(height: 17),
-                    LogoutButton(
-                      onPressed:
-                          widget.onLogout ??
-                          () => _aviso(
-                            context,
-                            'Conecte aqui a função de sair da conta.',
-                          ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

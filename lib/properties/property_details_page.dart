@@ -1,29 +1,40 @@
 import 'package:flutter/material.dart';
+
 import '../home/models/property.dart';
+import '../reservation/reservation_request_page.dart';
+import '../utils/external_links.dart';
+import 'components/property_info_sections.dart';
 
 class PropertyDetailsPage extends StatelessWidget {
   final Property property;
 
-  const PropertyDetailsPage({
-    super.key,
-    required this.property,
-  });
+  const PropertyDetailsPage({super.key, required this.property});
+
+  static const _primary = Color(0xFF963333);
+
+  void _solicitarReserva(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReservationRequestPage(property: property),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF963333);
-
     final enderecoCompleto = [
       property.endereco,
       property.local,
     ].whereType<String>().where((item) => item.trim().isNotEmpty).join(', ');
 
+    final temTelefone = ExternalLinks.hasPhone(property.locadorTelefone);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
         title: const Text('Detalhes do imóvel'),
-        backgroundColor: Colors.white,
-        foregroundColor: primaryColor,
+        backgroundColor: _primary,
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -33,14 +44,13 @@ class PropertyDetailsPage extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 250,
-              child: property.imagem == null ||
-                      property.imagem!.isEmpty
+              child: property.imagem == null || property.imagem!.isEmpty
                   ? Container(
                       color: const Color(0xFFE5DAD3),
                       child: const Icon(
                         Icons.home_work_outlined,
                         size: 80,
-                        color: primaryColor,
+                        color: _primary,
                       ),
                     )
                   : Image.network(
@@ -52,13 +62,12 @@ class PropertyDetailsPage extends StatelessWidget {
                           child: Icon(
                             Icons.home_work_outlined,
                             size: 80,
-                            color: primaryColor,
+                            color: _primary,
                           ),
                         ),
                       ),
                     ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -71,16 +80,11 @@ class PropertyDetailsPage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: primaryColor,
-                      ),
+                      const Icon(Icons.location_on_outlined, color: _primary),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -95,123 +99,90 @@ class PropertyDetailsPage extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 18),
-
-                  Text(
-                    'R\$ ${property.preco.toStringAsFixed(2).replaceAll('.', ',')}',
-                    style: const TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  const Text(
-                    'Características do imóvel',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _FeatureItem(
-                          icon: Icons.bed_outlined,
-                          label: 'Quartos',
-                          value: '${property.quartos}',
-                        ),
-                      ),
-                      Expanded(
-                        child: _FeatureItem(
-                          icon: Icons.bathtub_outlined,
-                          label: 'Banheiros',
-                          value: '${property.banheiros}',
-                        ),
-                      ),
-                      Expanded(
-                        child: _FeatureItem(
-                          icon: Icons.square_foot,
-                          label: 'Área',
-                          value: property.area == null
-                              ? 'Não informada'
-                              : '${property.area!.toStringAsFixed(2).replaceAll('.', ',')} m²',
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  const Text(
-                    'Sobre o imóvel',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  Text(
-                    property.descricao?.trim().isNotEmpty == true
-                        ? property.descricao!
-                        : 'Nenhuma descrição foi cadastrada para este imóvel.',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
+                  PropertyInfoSections(property: property),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _FeatureItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _FeatureItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, size: 27, color: const Color(0xFF963333)),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.black54,
-            fontSize: 12,
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!property.aceitaReserva)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Este imóvel não está disponível para reserva.',
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: property.aceitaReserva
+                      ? () => _solicitarReserva(context)
+                      : null,
+                  icon: const Icon(Icons.event_available_outlined),
+                  label: const Text('Solicitar reserva'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: temTelefone
+                      ? () => ExternalLinks.openWhatsapp(
+                          context,
+                          property.locadorTelefone,
+                          message:
+                              'Olá! Vi o imóvel "${property.nome}" no '
+                              'AlugaCrajubar e gostaria de mais informações.',
+                        )
+                      : null,
+                  icon: const Icon(Icons.chat_outlined),
+                  label: const Text('Conversar pelo WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E8E4E),
+                    side: BorderSide(
+                      color: temTelefone
+                          ? const Color(0xFF1E8E4E)
+                          : Colors.black12,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

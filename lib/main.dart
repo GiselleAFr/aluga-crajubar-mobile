@@ -7,8 +7,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'login/login/login.dart';
 import 'login/recovery/recovery.dart';
 
-final appNavigatorKey = GlobalKey<NavigatorState>();
+import 'shared/app_scroll_behavior.dart';
 
+final appNavigatorKey = GlobalKey<NavigatorState>();
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MeuApp());
@@ -76,6 +77,7 @@ class _MeuAppState extends State<MeuApp> {
 
     return MaterialApp(
       navigatorKey: appNavigatorKey,
+      scrollBehavior: const AppScrollBehavior(),
       debugShowCheckedModeBanner: false,
       title: 'Aluga Cariri',
       locale: const Locale('pt', 'BR'),

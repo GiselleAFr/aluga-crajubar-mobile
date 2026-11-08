@@ -21,6 +21,7 @@ class AuthUser {
     this.role,
     this.isLandlord = false,
     this.availableTabs = const [],
+    this.landlordRequestStatus,
   });
 
   final int id;
@@ -31,6 +32,7 @@ class AuthUser {
   final String? role;
   final bool isLandlord;
   final List<String> availableTabs;
+  final String? landlordRequestStatus;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
@@ -44,6 +46,7 @@ class AuthUser {
       availableTabs: (json['available_tabs'] as List? ?? const [])
           .whereType<String>()
           .toList(),
+      landlordRequestStatus: json['landlord_request_status'] as String?,
     );
   }
 }
