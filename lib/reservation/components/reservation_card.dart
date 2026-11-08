@@ -10,10 +10,14 @@ class ReservationCard extends StatelessWidget {
     super.key,
     required this.reservation,
     required this.onTap,
+    this.mostrarStatus = true,
   });
 
   final Reservation reservation;
   final VoidCallback onTap;
+
+  /// Esconde o selo de status (por exemplo, no histórico).
+  final bool mostrarStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +51,10 @@ class ReservationCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                ReservationStatusChip(reservation: r),
+                if (mostrarStatus) ...[
+                  const SizedBox(width: 8),
+                  ReservationStatusChip(reservation: r),
+                ],
               ],
             ),
             if (r.city != null && r.city!.isNotEmpty) ...[
