@@ -16,9 +16,12 @@ import '../../services/auth_service.dart';
 import '../../responsive_content.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, this.authService});
+  const LoginPage({super.key, this.authService, this.initialMessage});
 
   final AuthService? authService;
+
+  /// Mensagem exibida ao abrir a tela (ex.: senha alterada, sessão expirada).
+  final String? initialMessage;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -34,6 +37,23 @@ class _LoginPageState extends State<LoginPage> {
   bool lembrar = true;
   bool esconderSenha = true;
   bool entrando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final mensagem = widget.initialMessage;
+    if (mensagem != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mensagem),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      });
+    }
+  }
 
   @override
   void dispose() {

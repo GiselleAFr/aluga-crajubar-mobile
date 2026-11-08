@@ -65,9 +65,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _erroReservas;
 
   void _aviso(String mensagem) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensagem)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   @override
@@ -130,7 +129,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _atualizar() async {
-    await Future.wait([_carregarUsuario(), _carregarReservas(silencioso: true)]);
+    await Future.wait([
+      _carregarUsuario(),
+      _carregarReservas(silencioso: true),
+    ]);
   }
 
   /// Hospedagens concluídas: confirmadas e com a saída já ocorrida.

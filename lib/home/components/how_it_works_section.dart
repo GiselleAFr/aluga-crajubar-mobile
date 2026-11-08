@@ -108,11 +108,7 @@ class HowItWorksSection extends StatelessWidget {
 }
 
 class _Step extends StatelessWidget {
-  const _Step({
-    required this.icone,
-    required this.titulo,
-    required this.texto,
-  });
+  const _Step({required this.icone, required this.titulo, required this.texto});
 
   final IconData icone;
   final String titulo;

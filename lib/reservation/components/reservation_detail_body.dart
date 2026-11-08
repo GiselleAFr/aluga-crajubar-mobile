@@ -32,8 +32,7 @@ class ReservationDetailBody extends StatelessWidget {
   }
 
   String get _mensagemStatus => switch (reservation.status) {
-    'pending' =>
-      'Aguardando a análise do locador. A reserva só vale depois que ele aprovar.',
+    'pending' => 'Aguardando a análise do locador. A reserva só vale depois que ele aprovar.',
     'confirmed' => 'Reserva confirmada pelo locador.',
     'rejected' => 'O locador recusou esta solicitação.',
     'cancelled' => 'Esta reserva foi cancelada.',

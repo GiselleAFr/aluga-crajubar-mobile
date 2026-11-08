@@ -37,26 +37,14 @@ class LoginInput extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
-        ),
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFFB87A7A),
-          ),
-          prefixIcon: Icon(
-            icon,
-            size: 18,
-            color: Color(0xFFA83232),
-          ),
+          hintStyle: const TextStyle(fontSize: 14, color: Color(0xFFB87A7A)),
+          prefixIcon: Icon(icon, size: 18, color: Color(0xFFA83232)),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );

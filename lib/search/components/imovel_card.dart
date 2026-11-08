@@ -5,7 +5,12 @@ class ImovelCard extends StatelessWidget {
   final VoidCallback onReservar;
   final VoidCallback? onTap;
 
-  const ImovelCard({super.key, required this.imovel, required this.onReservar, this.onTap,});
+  const ImovelCard({
+    super.key,
+    required this.imovel,
+    required this.onReservar,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

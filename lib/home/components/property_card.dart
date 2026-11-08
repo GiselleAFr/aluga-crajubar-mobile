@@ -28,11 +28,7 @@ class PropertyCard extends StatelessWidget {
     width: double.infinity,
     color: const Color(0xFFE5DAD3),
     child: const Center(
-      child: Icon(
-        Icons.home_work_outlined,
-        size: 35,
-        color: Color(0xFF963333),
-      ),
+      child: Icon(Icons.home_work_outlined, size: 35, color: Color(0xFF963333)),
     ),
   );
 
@@ -108,7 +104,10 @@ class PropertyCard extends StatelessWidget {
                 child: IconButton(
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                  constraints: const BoxConstraints(
+                    minWidth: 30,
+                    minHeight: 30,
+                  ),
                   onPressed: onFavoritoPressed,
                   icon: Icon(
                     property.favorito ? Icons.favorite : Icons.favorite_border,

@@ -94,10 +94,7 @@ class _BuscarPageState extends State<BuscarPage> {
   /// Espera o usuário parar de digitar antes de consultar a API.
   void _agendarBusca() {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(
-      const Duration(milliseconds: 350),
-      _loadProperties,
-    );
+    _searchDebounce = Timer(const Duration(milliseconds: 350), _loadProperties);
   }
 
   Future<void> _loadProperties() async {

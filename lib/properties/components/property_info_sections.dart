@@ -91,7 +91,11 @@ class PropertyInfoSections extends StatelessWidget {
           property.descricao?.trim().isNotEmpty == true
               ? property.descricao!
               : 'Nenhuma descrição foi cadastrada para este imóvel.',
-          style: const TextStyle(fontSize: 15, height: 1.6, color: Colors.black87),
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.6,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 28),
         const Text(
