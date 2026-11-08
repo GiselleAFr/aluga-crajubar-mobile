@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
+import '../become_host/become_host_page.dart';
 import '../login/login/login.dart';
 import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
@@ -180,7 +181,7 @@ class _HomePageState extends State<HomePage> {
       case 4:
         _abrirConta(indice);
         break;
-    } 
+    }
   }
 
   void _abrirConta(int indice) {
@@ -192,6 +193,11 @@ class _HomePageState extends State<HomePage> {
           authService: _authService,
           indiceSelecionado: indice,
           onLogout: _sairDaConta,
+          onTornarLocador: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const BecomeHostPage()),
+            );
+          },
           onItemSelecionado: (selectedIndex) {
             if (selectedIndex == indice) return;
 

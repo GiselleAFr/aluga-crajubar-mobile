@@ -131,8 +131,8 @@ class _BuscarPageState extends State<BuscarPage> {
       return;
     }
 
-    if (indice == 2 && widget.onFavoritosPressed != null) {
-      widget.onFavoritosPressed!();
+    if (indice == 2) {
+      widget.onFavoritosPressed();
       return;
     }
 
