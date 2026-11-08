@@ -12,6 +12,7 @@ class Property {
   final int quartos;
   final int banheiros;
   final double? area;
+
   /// Estado de favorito compartilhado: todas as cópias do mesmo imóvel
   /// (Home, Buscar, Favoritos) enxergam o mesmo valor.
   bool get favorito => FavoritesStore.instance.isFavorite(id);
@@ -60,8 +61,9 @@ class Property {
 
     // A API envia o dono do imóvel em "proprietario" (id, name, phone).
     final proprietarioRaw = json['proprietario'] ?? json['locador'];
-    final proprietario =
-        proprietarioRaw is Map<String, dynamic> ? proprietarioRaw : null;
+    final proprietario = proprietarioRaw is Map<String, dynamic>
+        ? proprietarioRaw
+        : null;
 
     return Property(
       id: (json['id'] as num).toInt(),

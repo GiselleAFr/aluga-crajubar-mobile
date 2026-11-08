@@ -40,42 +40,28 @@ class RegisterTextField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         obscureText: senha && !mostrarSenha,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xff555555),
-        ),
+        style: const TextStyle(fontSize: 16, color: Color(0xff555555)),
         decoration: InputDecoration(
           border: InputBorder.none,
 
           hintText: hint,
 
-          hintStyle: const TextStyle(
-            color: Color(0xffc99999),
-            fontSize: 14,
-          ),
+          hintStyle: const TextStyle(color: Color(0xffc99999), fontSize: 14),
 
-          prefixIcon: Icon(
-            icon,
-            color: const Color(0xffb94b4b),
-            size: 18,
-          ),
+          prefixIcon: Icon(icon, color: const Color(0xffb94b4b), size: 18),
 
           suffixIcon: senha
               ? IconButton(
                   onPressed: onToggleSenha,
                   icon: Icon(
-                    mostrarSenha
-                        ? Icons.visibility
-                        : Icons.visibility_off,
+                    mostrarSenha ? Icons.visibility : Icons.visibility_off,
                     color: const Color(0xffd19b9b),
                     size: 15,
                   ),
                 )
               : null,
 
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );

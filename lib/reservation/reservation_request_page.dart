@@ -303,10 +303,7 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
           _titulo('Resumo da solicitação'),
           const SizedBox(height: 10),
           _card(child: _buildResumo()),
-          if (_erro != null) ...[
-            const SizedBox(height: 14),
-            _aviso(_erro!),
-          ],
+          if (_erro != null) ...[const SizedBox(height: 14), _aviso(_erro!)],
           const SizedBox(height: 10),
         ],
       ),
@@ -347,7 +344,10 @@ class _ReservationRequestPageState extends State<ReservationRequestPage> {
             const Icon(Icons.calendar_month_outlined, color: _primary),
             const SizedBox(width: 10),
             const Expanded(
-              child: Text('Quantidade de meses', style: TextStyle(fontSize: 15)),
+              child: Text(
+                'Quantidade de meses',
+                style: TextStyle(fontSize: 15),
+              ),
             ),
             _stepper(
               value: _meses,

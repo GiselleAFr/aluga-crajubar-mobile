@@ -33,19 +33,13 @@ class PasswordField extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xff555555),
-        ),
+        style: const TextStyle(fontSize: 16, color: Color(0xff555555)),
         decoration: InputDecoration(
           border: InputBorder.none,
 
           hintText: label,
 
-          hintStyle: const TextStyle(
-            color: Color(0xffc99999),
-            fontSize: 14,
-          ),
+          hintStyle: const TextStyle(color: Color(0xffc99999), fontSize: 14),
 
           prefixIcon: const Icon(
             Icons.lock_outline,
@@ -56,17 +50,13 @@ class PasswordField extends StatelessWidget {
           suffixIcon: IconButton(
             onPressed: onVisibilityPressed,
             icon: Icon(
-              obscureText
-                  ? Icons.visibility
-                  : Icons.visibility_off,
+              obscureText ? Icons.visibility : Icons.visibility_off,
               color: const Color(0xffd19b9b),
               size: 15,
             ),
           ),
 
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
         ),
       ),
     );

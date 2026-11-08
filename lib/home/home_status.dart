@@ -30,10 +30,7 @@ class HomeStatus {
     }).toList()..sort((a, b) => b.checkIn!.compareTo(a.checkIn!));
 
     if (ativas.isNotEmpty) {
-      return HomeStatus._(
-        HomeStatusType.activeStay,
-        reservation: ativas.first,
-      );
+      return HomeStatus._(HomeStatusType.activeStay, reservation: ativas.first);
     }
 
     // Pendentes cuja data de entrada já passou não aguardam mais ninguém.

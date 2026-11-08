@@ -23,6 +23,7 @@ import '../services/reservation_service.dart';
 import '../properties/property_details_page.dart';
 import '../properties/property_sheet.dart';
 import '../reservation/reservations_page.dart';
+import '../security/security_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.user});
@@ -188,20 +189,25 @@ class _HomePageState extends State<HomePage> {
   // Ações
   // ---------------------------------------------------------------------------
   void _aviso(String mensagem) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensagem)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
   // Destinos que ainda serão ligados (um ponto de troca para cada um).
   void _abrirAjuda() {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const HelpPage()));
+  }
+
+  void _abrirSeguranca() {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const HelpPage()),
+      MaterialPageRoute<void>(
+        builder: (_) => SecurityPage(authService: _authService),
+      ),
     );
   }
 
-  void _abrirPedidoLocador() =>
-      _aviso('O cadastro de locador chega em breve.');
+  void _abrirPedidoLocador() => _aviso('O cadastro de locador chega em breve.');
 
   void _abrirSolicitacoesLocador() =>
       _aviso('A tela de solicitações do locador está em desenvolvimento.');
@@ -281,6 +287,7 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute<void>(builder: (_) => const BecomeHostPage()),
             );
           },
+          onSeguranca: _abrirSeguranca,
           onAjuda: _abrirAjuda,
           onItemSelecionado: (selectedIndex) {
             if (selectedIndex == indice) return;

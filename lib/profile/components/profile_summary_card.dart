@@ -172,10 +172,7 @@ class ProfileSummaryCard extends StatelessWidget {
               ),
               Container(width: 1, height: 30, color: _borda),
               Expanded(
-                child: _Estatistica(
-                  valor: '$favoritos',
-                  rotulo: 'Favoritos',
-                ),
+                child: _Estatistica(valor: '$favoritos', rotulo: 'Favoritos'),
               ),
             ],
           ),
