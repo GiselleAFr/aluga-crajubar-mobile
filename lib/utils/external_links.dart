@@ -85,4 +85,40 @@ class ExternalLinks {
       );
     }
   }
+
+  /// Abre o app de e-mail. Se não houver um, copia o endereço.
+  static Future<void> openEmail(
+    BuildContext context,
+    String email, {
+    String? subject,
+    String? body,
+  }) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final partes = <String>[
+      if (subject != null) 'subject=${Uri.encodeComponent(subject)}',
+      if (body != null) 'body=${Uri.encodeComponent(body)}',
+    ];
+    final uri = Uri.parse(
+      'mailto:$email${partes.isEmpty ? '' : '?${partes.join('&')}'}',
+    );
+
+    Future<void> alternativa() async {
+      await Clipboard.setData(ClipboardData(text: email));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível abrir o app de e-mail. O endereço foi copiado.',
+          ),
+        ),
+      );
+    }
+
+    try {
+      final abriu = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!abriu) await alternativa();
+    } catch (_) {
+      await alternativa();
+    }
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../favorites/favorites_page.dart';
 import '../favorites/favorites_store.dart';
+import '../help/help_page.dart';
 import '../login/login/login.dart';
 import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
@@ -192,7 +193,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Destinos que ainda serão ligados (um ponto de troca para cada um).
-  void _abrirAjuda() => _aviso('Ajuda e Suporte chega na próxima etapa.');
+  void _abrirAjuda() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const HelpPage()),
+    );
+  }
 
   void _abrirPedidoLocador() =>
       _aviso('O cadastro de locador chega em breve.');
@@ -270,6 +275,7 @@ class _HomePageState extends State<HomePage> {
           authService: _authService,
           indiceSelecionado: indice,
           onLogout: _sairDaConta,
+          onAjuda: _abrirAjuda,
           onItemSelecionado: (selectedIndex) {
             if (selectedIndex == indice) return;
 
