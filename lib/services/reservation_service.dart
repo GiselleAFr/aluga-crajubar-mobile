@@ -248,11 +248,7 @@ class ReservationService {
       final data = await _send(
         'GET',
         '/bookings',
-        query: {
-          'page': '$page',
-          'per_page': '50',
-          'status': ?status,
-        },
+        query: {'page': '$page', 'per_page': '50', 'status': ?status},
       );
 
       final items = data['data'];

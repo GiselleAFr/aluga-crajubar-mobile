@@ -52,9 +52,20 @@ class AuthUser {
 }
 
 class AuthException implements Exception {
-  const AuthException(this.message);
+  const AuthException(
+    this.message, {
+    this.statusCode,
+    this.fieldErrors = const {},
+  });
 
   final String message;
+
+  /// Status HTTP da resposta; nulo quando o erro não veio do servidor
+  /// (falha de rede, tempo esgotado, resposta inválida).
+  final int? statusCode;
+
+  /// Primeira mensagem de cada campo em `errors` (respostas 422 do Laravel).
+  final Map<String, String> fieldErrors;
 
   @override
   String toString() => message;
@@ -190,6 +201,61 @@ class AuthService {
     return data['message'] as String? ?? 'Senha alterada com sucesso.';
   }
 
+  /// Solicita a alteração de senha; o servidor envia um código por e-mail.
+  Future<String> requestPasswordChange({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    final data = await _request(
+      'POST',
+      '/auth/change-password',
+      authenticated: true,
+      body: {
+        'current_password': currentPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+    return data['message'] as String? ??
+        'Enviamos um e-mail para confirmar a alteração da sua senha.';
+  }
+
+  /// Confirma a alteração com o código de 6 dígitos. Em caso de sucesso o
+  /// servidor encerra todas as sessões, então o token local também é apagado.
+  Future<String> verifyPasswordChangeCode({required String code}) async {
+    final data = await _request(
+      'POST',
+      '/auth/change-password/verify-code',
+      authenticated: true,
+      body: {'code': code},
+    );
+    await clearSession();
+    return data['message'] as String? ??
+        'Senha alterada com sucesso. Faça login novamente.';
+  }
+
+  /// Reenvia o código da alteração de senha pendente.
+  Future<String> resendPasswordChangeCode() async {
+    final data = await _request(
+      'POST',
+      '/auth/change-password/resend-code',
+      authenticated: true,
+      body: const <String, dynamic>{},
+    );
+    return data['message'] as String? ??
+        'Enviamos um novo código para o seu e-mail.';
+  }
+
+  /// Apaga apenas o token guardado neste aparelho (sem chamar a API).
+  Future<void> clearSession() async {
+    try {
+      await _storage.delete(key: _tokenKey);
+    } catch (_) {
+      // Sem keyring (ex.: desktop): a navegação para o login continua.
+    }
+  }
+
   Future<String?> get accessToken => _storage.read(key: _tokenKey);
 
   void close() => _client.close();
@@ -251,7 +317,11 @@ class AuthService {
         if (response.statusCode == 401 && authenticated) {
           await _storage.delete(key: _tokenKey);
         }
-        throw AuthException(_errorMessage(decoded));
+        throw AuthException(
+          _errorMessage(decoded),
+          statusCode: response.statusCode,
+          fieldErrors: _fieldErrors(decoded),
+        );
       }
       return decoded;
     } on AuthException {
@@ -265,6 +335,16 @@ class AuthService {
     } on FormatException {
       throw const AuthException('A API retornou uma resposta inválida.');
     }
+  }
+
+  Map<String, String> _fieldErrors(Map<String, dynamic> data) {
+    final errors = data['errors'];
+    if (errors is! Map<String, dynamic>) return const {};
+    return {
+      for (final entry in errors.entries)
+        if (entry.value is List && (entry.value as List).isNotEmpty)
+          entry.key: (entry.value as List).first.toString(),
+    };
   }
 
   String _errorMessage(Map<String, dynamic> data) {

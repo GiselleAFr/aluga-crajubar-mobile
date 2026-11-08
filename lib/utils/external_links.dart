@@ -76,7 +76,9 @@ class ExternalLinks {
       final abriu = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!abriu) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Não foi possível abrir o Google Maps.')),
+          const SnackBar(
+            content: Text('Não foi possível abrir o Google Maps.'),
+          ),
         );
       }
     } catch (_) {

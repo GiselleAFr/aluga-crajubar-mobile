@@ -37,7 +37,9 @@ class HomeStatusCard extends StatelessWidget {
         Icons.hourglass_top_outlined,
         const Color(0xFFFFF3D6),
         const Color(0xFF8A5A00),
-        n == 1 ? 'Reserva aguardando resposta' : '$n reservas aguardando resposta',
+        n == 1
+            ? 'Reserva aguardando resposta'
+            : '$n reservas aguardando resposta',
         n == 1
             ? '${r?.propertyName ?? 'Sua solicitação'} · o locador ainda vai analisar.'
             : 'Os locadores ainda vão analisar suas solicitações.',

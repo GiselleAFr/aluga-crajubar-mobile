@@ -208,8 +208,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
             const SizedBox(height: 10),
             CategoryChips(
               categorias: [
-                for (final f in _filtros)
-                  '${f.$2} (${_doStatus(f.$1).length})',
+                for (final f in _filtros) '${f.$2} (${_doStatus(f.$1).length})',
               ],
               selecionada: _filtros.indexWhere((f) => f.$1 == _filtro),
               onSelecionar: (index) => setState(() {
