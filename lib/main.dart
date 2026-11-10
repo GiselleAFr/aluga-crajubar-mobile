@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'login/login/login.dart';
 import 'login/recovery/recovery.dart';
@@ -79,6 +80,13 @@ class _MeuAppState extends State<MeuApp> {
       scrollBehavior: const AppScrollBehavior(),
       debugShowCheckedModeBanner: false,
       title: 'Aluga Cariri',
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [Locale('pt', 'BR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       theme: baseTheme.copyWith(
         textTheme: baseTheme.textTheme.copyWith(
           displayLarge: baseTheme.textTheme.displayLarge?.copyWith(

@@ -19,6 +19,7 @@ class BuscarPage extends StatefulWidget {
     super.key,
     this.userName,
     this.termoInicial,
+    this.mostrarLocador = false,
     required this.onFavoritosPressed,
     this.onItemSelecionado,
   });
@@ -27,6 +28,7 @@ class BuscarPage extends StatefulWidget {
 
   /// Termo vindo da busca da Home (a pesquisa já abre preenchida).
   final String? termoInicial;
+  final bool mostrarLocador;
   final VoidCallback onFavoritosPressed;
   final ValueChanged<int>? onItemSelecionado;
 
@@ -247,6 +249,7 @@ class _BuscarPageState extends State<BuscarPage> {
       bottomNavigationBar: HomeBottomNavigation(
         indiceSelecionado: indiceSelecionado,
         onItemSelecionado: selecionarNavegacao,
+        mostrarLocador: widget.mostrarLocador,
       ),
     );
   }

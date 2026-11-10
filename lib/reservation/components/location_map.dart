@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-/// Mapa com o marcador do imóvel (OpenStreetMap).
+/// Mapa com a localização do imóvel.
 class LocationMap extends StatelessWidget {
   const LocationMap({
     super.key,
@@ -18,44 +15,55 @@ class LocationMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ponto = LatLng(latitude, longitude);
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: SizedBox(
         height: height,
-        child: FlutterMap(
-          options: MapOptions(initialCenter: ponto, initialZoom: 15),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.aluga_crajubar',
-            ),
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: ponto,
-                  width: 45,
-                  height: 45,
-                  child: const Icon(
-                    Icons.location_on,
-                    color: Color(0xFF963333),
-                    size: 42,
-                  ),
-                ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFFB9D9B0),
+                const Color(0xFF95B8A0),
               ],
             ),
-            RichAttributionWidget(
-              attributions: [
-                TextSourceAttribution(
-                  'OpenStreetMap contributors',
-                  onTap: () => launchUrl(
-                    Uri.parse('https://www.openstreetmap.org/copyright'),
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Positioned.fill(
+                child: Icon(
+                  Icons.map_outlined,
+                  size: 72,
+                  color: Color(0xFF2E5D4D),
+                ),
+              ),
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Lat $latitude, Lng $longitude',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
