@@ -14,6 +14,7 @@ import 'components/profile_history_section.dart';
 import 'components/profile_settings_section.dart';
 import 'components/profile_summary_card.dart';
 import 'components/history_page.dart';
+import 'personal_information_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String nomeUsuario;
@@ -180,6 +181,22 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _abrirInformacoesPessoais() async {
+    final user = _user;
+    if (user == null) {
+      _aviso('Aguarde o carregamento dos dados do seu perfil.');
+      return;
+    }
+
+    final updatedUser = await Navigator.of(context).push<AuthUser>(
+      MaterialPageRoute<AuthUser>(
+        builder: (_) =>
+            PersonalInformationPage(user: user, authService: _authService),
+      ),
+    );
+    if (updatedUser != null && mounted) setState(() => _user = updatedUser);
+  }
+
   @override
   Widget build(BuildContext context) {
     final nomeUsuario = _user?.name.isNotEmpty == true
@@ -221,7 +238,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           hospedagens: temDados ? historico.length : null,
                           pendentes: temDados ? _pendentes : null,
                           favoritos: FavoritesStore.instance.count,
-                          onTap: widget.onInformacoesPessoais,
+                          onTap:
+                              widget.onInformacoesPessoais ??
+                              _abrirInformacoesPessoais,
                         ),
                         const SizedBox(height: 22),
                         ProfileHistorySection(
@@ -238,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ProfileSettingsSection(
                           onInformacoesPessoais:
                               widget.onInformacoesPessoais ??
-                              () => _aviso('Informações pessoais em breve.'),
+                              _abrirInformacoesPessoais,
                           onSeguranca:
                               widget.onSeguranca ??
                               () => _aviso('Segurança e login em breve.'),
