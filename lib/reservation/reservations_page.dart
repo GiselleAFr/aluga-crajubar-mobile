@@ -13,11 +13,13 @@ import 'reservation_pricing.dart';
 class ReservationsPage extends StatefulWidget {
   final ValueChanged<int> onItemSelecionado;
   final VoidCallback onEncontrarHospedagens;
+  final bool mostrarLocador;
 
   const ReservationsPage({
     super.key,
     required this.onItemSelecionado,
     required this.onEncontrarHospedagens,
+    this.mostrarLocador = false,
   });
 
   @override
@@ -152,6 +154,7 @@ class _ReservationsPageState extends State<ReservationsPage> {
       ),
       bottomNavigationBar: HomeBottomNavigation(
         indiceSelecionado: 3,
+        mostrarLocador: widget.mostrarLocador,
         onItemSelecionado: (index) {
           if (index == 3) return;
           widget.onItemSelecionado(index);

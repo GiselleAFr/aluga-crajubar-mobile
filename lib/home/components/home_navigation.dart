@@ -5,60 +5,99 @@ class HomeBottomNavigation extends StatelessWidget {
     super.key,
     required this.indiceSelecionado,
     required this.onItemSelecionado,
+    this.mostrarLocador = false,
   });
 
   final int indiceSelecionado;
   final ValueChanged<int> onItemSelecionado;
+  final bool mostrarLocador;
 
-  static const List<(IconData, String)> _items = [
-    (Icons.home_outlined, 'Início'),
-    (Icons.search, 'Buscar'),
-    (Icons.favorite_border, 'Favoritos'),
-    (Icons.calendar_month_outlined, 'Reservas'),
-    (Icons.person_outline, 'Perfil'),
+  static const List<(int, IconData, String)> _items = [
+    (0, Icons.home_outlined, 'Início'),
+    (1, Icons.search, 'Buscar'),
+    (2, Icons.favorite_border, 'Favoritos'),
+    (3, Icons.calendar_month_outlined, 'Reservas'),
+    (5, Icons.home_work_outlined, 'Locador'),
+    (4, Icons.person_outline, 'Perfil'),
   ];
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      color: Colors.white,
-      border: Border(top: BorderSide(color: Color(0xFFE5E0DD))),
-    ),
-    child: SafeArea(
-      top: false,
-      child: SizedBox(
-        height: 57,
-        child: Row(
-          children: List.generate(_items.length, (index) {
-            final selected = indiceSelecionado == index;
-            final item = _items[index];
-            final color = selected ? const Color(0xFF963333) : Colors.grey;
+  Widget build(BuildContext context) {
+    final visibleItems = _items
+        .where((item) => mostrarLocador || item.$1 != 5)
+        .toList();
 
-            return Expanded(
-              child: InkWell(
-                onTap: () => onItemSelecionado(index),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(item.$1, size: 21, color: color),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.$2,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: color,
-                        fontWeight: selected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE5E0DD))),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 57,
+          child: Row(
+            children: [
+              for (final item in visibleItems)
+                Expanded(
+                  child: InkWell(
+                    onTap: () => onItemSelecionado(item.$1),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (item.$1 == 5)
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Icon(
+                                Icons.home_outlined,
+                                size: 21,
+                                color: indiceSelecionado == item.$1
+                                    ? const Color(0xFF963333)
+                                    : Colors.grey,
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: -1,
+                                child: Icon(
+                                  Icons.lock_outline,
+                                  size: 10,
+                                  color: indiceSelecionado == item.$1
+                                      ? const Color(0xFF963333)
+                                      : Colors.grey,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Icon(
+                            item.$2,
+                            size: 21,
+                            color: indiceSelecionado == item.$1
+                                ? const Color(0xFF963333)
+                                : Colors.grey,
+                          ),
+                        const SizedBox(height: 3),
+                        Text(
+                          item.$3,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: indiceSelecionado == item.$1
+                                ? const Color(0xFF963333)
+                                : Colors.grey,
+                            fontWeight: indiceSelecionado == item.$1
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

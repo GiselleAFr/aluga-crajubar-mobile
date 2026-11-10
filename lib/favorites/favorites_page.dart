@@ -11,12 +11,14 @@ import 'favorites_store.dart';
 
 class FavoritesPage extends StatefulWidget {
   final String userName;
+  final bool mostrarLocador;
   final ValueChanged<Property> onReservarPressed;
   final ValueChanged<int>? onItemSelecionado;
 
   const FavoritesPage({
     super.key,
     this.userName = 'viajante',
+    this.mostrarLocador = false,
     required this.onReservarPressed,
     this.onItemSelecionado,
   });
@@ -120,6 +122,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       ),
       bottomNavigationBar: HomeBottomNavigation(
         indiceSelecionado: 2,
+        mostrarLocador: widget.mostrarLocador,
         onItemSelecionado: (index) {
           if (index == 2) return;
           widget.onItemSelecionado?.call(index);

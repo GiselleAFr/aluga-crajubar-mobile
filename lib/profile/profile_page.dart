@@ -20,6 +20,7 @@ class ProfilePage extends StatefulWidget {
   final AuthUser? user;
   final AuthService? authService;
   final int indiceSelecionado;
+  final bool mostrarLocador;
   final ValueChanged<int>? onItemSelecionado;
   final VoidCallback? onLogout;
   final VoidCallback? onInformacoesPessoais;
@@ -35,6 +36,7 @@ class ProfilePage extends StatefulWidget {
     this.user,
     this.authService,
     this.indiceSelecionado = 4,
+    this.mostrarLocador = false,
     this.onItemSelecionado,
     this.onLogout,
     this.onInformacoesPessoais,
@@ -273,6 +275,7 @@ class _ProfilePageState extends State<ProfilePage> {
       bottomNavigationBar: HomeBottomNavigation(
         indiceSelecionado: widget.indiceSelecionado,
         onItemSelecionado: (index) => widget.onItemSelecionado?.call(index),
+        mostrarLocador: widget.mostrarLocador,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'components/document_upload_field.dart';
 import 'components/form_section.dart';
 import 'components/labeled_form_field.dart';
 import 'models/become_host_form.dart';
+import '../utils/input_formatters.dart';
 
 class BecomeHostPage extends StatefulWidget {
   const BecomeHostPage({super.key, this.onSubmit});
@@ -54,6 +55,36 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
 
   String? _requiredField(String? value) =>
       value == null || value.trim().isEmpty ? 'Campo obrigatório' : null;
+
+  String? _validateBirthDate(String? value) {
+    final requiredError = _requiredField(value);
+    if (requiredError != null) return requiredError;
+
+    final parts = value!.split('/');
+    if (parts.length != 3 ||
+        parts[0].length != 2 ||
+        parts[1].length != 2 ||
+        parts[2].length != 4) {
+      return 'Informe uma data válida';
+    }
+
+    final day = int.tryParse(parts[0]);
+    final month = int.tryParse(parts[1]);
+    final year = int.tryParse(parts[2]);
+    if (day == null || month == null || year == null) {
+      return 'Informe uma data válida';
+    }
+
+    final date = DateTime(year, month, day);
+    if (date.year != year ||
+        date.month != month ||
+        date.day != day ||
+        date.isAfter(DateTime.now())) {
+      return 'Informe uma data válida';
+    }
+
+    return null;
+  }
 
   Future<void> _selectBirthDate() async {
     final now = DateTime.now();
@@ -214,22 +245,34 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
         controller: _cpfController,
         keyboardType: TextInputType.number,
         hintText: '123.456.789-00',
+        inputFormatters: [
+          DigitsMaskInputFormatter(
+            maxDigits: 11,
+            formatDigits: formatCpfDigits,
+          ),
+        ],
         validator: _requiredField,
       ),
       LabeledTextFormField(
         label: 'Data de Nascimento',
         controller: _birthDateController,
         hintText: 'dd/mm/aaaa',
-        readOnly: true,
-        onTap: _selectBirthDate,
-        validator: _requiredField,
-        suffix: Padding(
-          padding: const EdgeInsets.only(right: 14),
-          child: Icon(
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          DigitsMaskInputFormatter(
+            maxDigits: 8,
+            formatDigits: formatDateDigits,
+          ),
+        ],
+        validator: _validateBirthDate,
+        suffix: IconButton(
+          onPressed: _selectBirthDate,
+          icon: Icon(
             Icons.calendar_today_outlined,
             color: Theme.of(context).colorScheme.primary,
             size: 18,
           ),
+          tooltip: 'Selecionar data',
         ),
       ),
     ],
@@ -295,6 +338,12 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
         controller: _primaryPhoneController,
         keyboardType: TextInputType.phone,
         hintText: '(11) 99999-9999',
+        inputFormatters: [
+          DigitsMaskInputFormatter(
+            maxDigits: 11,
+            formatDigits: formatBrazilianPhoneDigits,
+          ),
+        ],
         validator: _requiredField,
       ),
       LabeledTextFormField(
@@ -302,12 +351,24 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
         controller: _secondaryPhoneController,
         keyboardType: TextInputType.phone,
         hintText: '(00) 00000-0000',
+        inputFormatters: [
+          DigitsMaskInputFormatter(
+            maxDigits: 11,
+            formatDigits: formatBrazilianPhoneDigits,
+          ),
+        ],
       ),
       LabeledTextFormField(
         label: 'Telefone Comercial (Opcional)',
         controller: _commercialPhoneController,
         keyboardType: TextInputType.phone,
         hintText: '(00) 0000-0000',
+        inputFormatters: [
+          DigitsMaskInputFormatter(
+            maxDigits: 11,
+            formatDigits: formatBrazilianPhoneDigits,
+          ),
+        ],
       ),
     ],
   );

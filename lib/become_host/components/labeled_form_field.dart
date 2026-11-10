@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const _fieldFill = Color(0xFFF9FAFB);
 const _fieldBorder = Color(0xFFD9BDA6);
@@ -16,6 +17,7 @@ class LabeledTextFormField extends StatelessWidget {
     this.onTap,
     this.validator,
     this.suffix,
+    this.inputFormatters = const [],
     this.enabled = true,
   });
 
@@ -28,6 +30,7 @@ class LabeledTextFormField extends StatelessWidget {
   final VoidCallback? onTap;
   final FormFieldValidator<String>? validator;
   final Widget? suffix;
+  final List<TextInputFormatter> inputFormatters;
   final bool enabled;
 
   @override
@@ -53,6 +56,7 @@ class LabeledTextFormField extends StatelessWidget {
           readOnly: readOnly,
           onTap: onTap,
           validator: validator,
+          inputFormatters: inputFormatters,
           enabled: enabled,
           style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 14),
           decoration: InputDecoration(

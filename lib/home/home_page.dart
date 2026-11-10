@@ -4,6 +4,9 @@ import '../favorites/favorites_page.dart';
 import '../become_host/become_host_page.dart';
 import '../favorites/favorites_store.dart';
 import '../help/help_page.dart';
+import '../landlord/landlord_property_address_page.dart';
+import '../landlord/landlord_properties_page.dart';
+import '../landlord/models/landlord_property_draft.dart';
 import '../login/login/login.dart';
 import '../profile/profile_page.dart';
 import '../search/buscar_page.dart';
@@ -13,7 +16,6 @@ import 'components/home_header.dart';
 import 'components/home_navigation.dart';
 import 'components/home_status_card.dart';
 import 'components/how_it_works_section.dart';
-import 'components/landlord_banner.dart';
 import 'components/search_invite.dart';
 import 'home_status.dart';
 import '../responsive_content.dart';
@@ -46,8 +48,10 @@ class _HomePageState extends State<HomePage> {
   final _buscaController = TextEditingController();
 
   AuthUser? _user;
+  bool _isLandlord = false;
   List<Property> _destaques = [];
   List<Property> _recentes = [];
+  final List<LandlordPropertyDraft> _landlordProperties = [];
   HomeStatus? _status;
   bool _loading = true;
   String? _loadError;
@@ -57,6 +61,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _user = widget.user;
+    _isLandlord = widget.user?.isLandlord ?? false;
     // Quando uma solicitação é criada ou cancelada, o card de status atualiza.
     ReservationService.changes.addListener(_carregarStatus);
     _carregarTudo();
@@ -85,7 +90,12 @@ class _HomePageState extends State<HomePage> {
   Future<void> _atualizarUsuarioEStatus() async {
     try {
       final atualizado = await _authService.currentUser();
-      if (mounted) setState(() => _user = atualizado);
+      if (mounted) {
+        setState(() {
+          _user = atualizado;
+          _isLandlord = _isLandlord || atualizado.isLandlord;
+        });
+      }
     } catch (_) {
       // Mantém o usuário que veio do login.
     }
@@ -151,9 +161,8 @@ class _HomePageState extends State<HomePage> {
   /// O card de status é opcional: se algo falhar, ele simplesmente não aparece.
   Future<void> _carregarStatus() async {
     HomeStatus? novo;
-    final usuario = _user;
 
-    if (usuario != null && usuario.isLandlord) {
+    if (_isLandlord) {
       try {
         final pendentes = await _reservationService.getPendingRequestsCount();
         if (pendentes > 0) novo = HomeStatus.landlordPending(pendentes);
@@ -170,19 +179,6 @@ class _HomePageState extends State<HomePage> {
 
     if (!mounted) return;
     setState(() => _status = novo);
-  }
-
-  /// Mostra o banner só para quem ainda pode pedir para ser locador:
-  /// esconde de locadores, administradores e de quem já tem pedido pendente.
-  bool get _mostrarBannerLocador {
-    final usuario = _user;
-    if (usuario == null) return false;
-
-    final podeSolicitar = usuario.role != null
-        ? usuario.role == 'client'
-        : !usuario.isLandlord;
-
-    return podeSolicitar && usuario.landlordRequestStatus != 'pending';
   }
 
   // ---------------------------------------------------------------------------
@@ -206,8 +202,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  void _abrirPedidoLocador() => _aviso('O cadastro de locador chega em breve.');
 
   void _abrirSolicitacoesLocador() =>
       _aviso('A tela de solicitações do locador está em desenvolvimento.');
@@ -256,13 +250,66 @@ class _HomePageState extends State<HomePage> {
       case 4:
         _abrirConta(indice);
         break;
+      case 5:
+        _abrirImoveisLocador();
+        break;
     }
+  }
+
+  void _abrirImoveisLocador() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: LandlordPropertiesPage.routeName),
+        builder: (_) => LandlordPropertiesPage(
+          userName: _user?.name ?? widget.user?.name ?? 'viajante',
+          properties: List.unmodifiable(_landlordProperties),
+          onPropertiesChanged: (properties) {
+            setState(() {
+              _landlordProperties
+                ..clear()
+                ..addAll(properties);
+            });
+          },
+          onAdicionarImovel: (onPropertyCreated) {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                settings: const RouteSettings(
+                  name: LandlordPropertyAddressPage.routeName,
+                ),
+                builder: (_) => LandlordPropertyAddressPage(
+                  onPropertyCreated: (property) {
+                    onPropertyCreated(property);
+                    Navigator.of(context).popUntil(
+                      (route) =>
+                          route.settings.name ==
+                          LandlordPropertiesPage.routeName,
+                    );
+                    _aviso('Imóvel adicionado à lista de demonstração.');
+                  },
+                  onItemSelecionado: (indice) {
+                    if (indice == 5) return;
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    _selecionarNavegacao(indice);
+                  },
+                ),
+              ),
+            );
+          },
+          onItemSelecionado: (indice) {
+            if (indice == 5) return;
+            Navigator.of(context).pop();
+            _selecionarNavegacao(indice);
+          },
+        ),
+      ),
+    );
   }
 
   void _abrirReservas() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ReservationsPage(
+          mostrarLocador: _isLandlord,
           onEncontrarHospedagens: _abrirBusca,
           onItemSelecionado: (selectedIndex) {
             Navigator.of(context).pop();
@@ -281,10 +328,19 @@ class _HomePageState extends State<HomePage> {
           user: widget.user,
           authService: _authService,
           indiceSelecionado: indice,
+          mostrarLocador: _isLandlord,
           onLogout: _sairDaConta,
           onTornarLocador: () {
             Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const BecomeHostPage()),
+              MaterialPageRoute<void>(
+                builder: (_) => BecomeHostPage(
+                  onSubmit: (_) {
+                    setState(() => _isLandlord = true);
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    _aviso('Cadastro de locador concluído nesta demonstração.');
+                  },
+                ),
+              ),
             );
           },
           onSeguranca: _abrirSeguranca,
@@ -304,6 +360,8 @@ class _HomePageState extends State<HomePage> {
               _abrirReservas();
             } else if (selectedIndex == 4) {
               _abrirConta(4);
+            } else if (selectedIndex == 5) {
+              _aviso('A área do locador estará disponível em breve.');
             }
           },
         ),
@@ -333,6 +391,7 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => BuscarPage(
           userName: widget.user?.name,
           termoInicial: termo,
+          mostrarLocador: _isLandlord,
           onItemSelecionado: (indice) {
             Navigator.of(context).pop();
             _selecionarNavegacao(indice);
@@ -351,6 +410,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute<void>(
         builder: (_) => FavoritesPage(
           userName: widget.user?.name ?? 'viajante',
+          mostrarLocador: _isLandlord,
           onReservarPressed: _showProperty,
           onItemSelecionado: (selectedIndex) {
             Navigator.of(context).pop();
@@ -402,11 +462,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                       const SizedBox(height: 22),
                       _buildImoveis(),
-                      if (_mostrarBannerLocador)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 26, 18, 0),
-                          child: LandlordBanner(onPressed: _abrirPedidoLocador),
-                        ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(18, 26, 18, 0),
                         child: SearchInvite(onPressed: _abrirBusca),
@@ -424,6 +479,7 @@ class _HomePageState extends State<HomePage> {
     bottomNavigationBar: HomeBottomNavigation(
       indiceSelecionado: _navIndex,
       onItemSelecionado: _selecionarNavegacao,
+      mostrarLocador: _isLandlord,
     ),
   );
 
