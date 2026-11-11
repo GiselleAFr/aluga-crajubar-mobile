@@ -61,6 +61,7 @@ class _HelpPageState extends State<HelpPage> {
       backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
         title: const Text('Ajuda e suporte'),
+        centerTitle: true,
         backgroundColor: _vinho,
         foregroundColor: Colors.white,
         elevation: 0,

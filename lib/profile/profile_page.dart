@@ -264,9 +264,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           onNotificacoes:
                               widget.onNotificacoes ??
                               () => _aviso('Notificações em breve.'),
-                          onMetodoPagamento:
+                          /*onMetodoPagamento:
                               widget.onMetodoPagamento ??
-                              () => _aviso('Método de pagamento em breve.'),
+                              () => _aviso('Método de pagamento em breve.'),*/
                           onTornarLocador:
                               widget.onTornarLocador ??
                               () => _aviso('Cadastro de locador em breve.'),

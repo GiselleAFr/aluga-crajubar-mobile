@@ -4,7 +4,7 @@ class ProfileSettingsSection extends StatelessWidget {
   final VoidCallback onInformacoesPessoais,
       onSeguranca,
       onNotificacoes,
-      onMetodoPagamento,
+      //onMetodoPagamento,
       onTornarLocador,
       onAjuda;
 
@@ -13,7 +13,7 @@ class ProfileSettingsSection extends StatelessWidget {
     required this.onInformacoesPessoais,
     required this.onSeguranca,
     required this.onNotificacoes,
-    required this.onMetodoPagamento,
+    //required this.onMetodoPagamento,
     required this.onTornarLocador,
     required this.onAjuda,
   });
@@ -54,11 +54,11 @@ class ProfileSettingsSection extends StatelessWidget {
               titulo: 'Notificações',
               onTap: onNotificacoes,
             ),
-            _SettingsItem(
+            /*_SettingsItem(
               icon: Icons.credit_card_outlined,
               titulo: 'Método de Pagamento',
               onTap: onMetodoPagamento,
-            ),
+            ),*/
             _SettingsItem(
               icon: Icons.home_work_outlined,
               titulo: 'Tornar-se um Locador',

@@ -188,16 +188,17 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.white,
     appBar: AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
+      backgroundColor: _vinho,
+      foregroundColor: Colors.white,
+      elevation: 0,
       centerTitle: true,
       title: const Text(
-        'Informações Pessoais',
+        'Informações pessoais',
         style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
       ),
       leading: IconButton(
         tooltip: 'Voltar',
-        icon: const Icon(Icons.arrow_back, color: _vinho),
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () => Navigator.of(context).maybePop(),
       ),
       bottom: const PreferredSize(

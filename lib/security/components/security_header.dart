@@ -14,10 +14,11 @@ class SecurityHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: 0,
       centerTitle: true,
+      backgroundColor: SecurityColors.vinho,
+      foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+      elevation: 0,
+      scrolledUnderElevation: 0,
       toolbarHeight: 60,
       leadingWidth: 64,
       leading: Padding(
@@ -28,15 +29,14 @@ class SecurityHeader extends StatelessWidget implements PreferredSizeWidget {
             shape: const CircleBorder(),
             child: InkWell(
               key: const Key('security-back'),
-              customBorder: const CircleBorder(),
               onTap: onBack,
               child: const SizedBox(
                 width: 34,
                 height: 34,
                 child: Icon(
                   Icons.arrow_back,
-                  size: 18,
-                  color: SecurityColors.vinho,
+                  size: 26,
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -48,7 +48,6 @@ class SecurityHeader extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.black87,
         ),
       ),
     );

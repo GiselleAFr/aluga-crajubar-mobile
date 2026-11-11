@@ -10,5 +10,5 @@ class SecurityColors {
   static const vinho = Color(0xFF963333);
   static const campo = Color(0xFFF9FAFC);
   static const borda = Color(0xFFE7E7E7);
-  static const fundoVoltar = Color(0xFFF8E7E7);
+  static const fundoVoltar = Color.fromARGB(0, 248, 231, 231);
 }
