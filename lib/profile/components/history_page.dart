@@ -17,7 +17,7 @@ class HistoryPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
         title: const Text('Histórico de hospedagens'),
-        backgroundColor: const Color(0xFF963333),
+        backgroundColor: const Color(0xFFA83232),
         foregroundColor: Colors.white,
         elevation: 0,
       ),

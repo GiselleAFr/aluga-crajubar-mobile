@@ -22,7 +22,7 @@ class CategoryChips extends StatefulWidget {
 }
 
 class _CategoryChipsState extends State<CategoryChips> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
   static const _borda = Color(0xFFE8D2C7);
 
   final ScrollController _controller = ScrollController();

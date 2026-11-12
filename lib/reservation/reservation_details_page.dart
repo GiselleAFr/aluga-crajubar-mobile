@@ -15,7 +15,7 @@ class ReservationDetailsPage extends StatefulWidget {
 }
 
 class _ReservationDetailsPageState extends State<ReservationDetailsPage> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   final ReservationService _service = ReservationService();
   bool _cancelando = false;

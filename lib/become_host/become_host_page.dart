@@ -169,7 +169,9 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: selected ? primaryColor : const Color(0xFFD9BDA6),
+                  color: selected
+                      ? primaryColor
+                      : primaryColor.withValues(alpha: 0.3),
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -192,8 +194,12 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFD9BDA6))),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          ),
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
@@ -208,7 +214,7 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
               visualDensity: VisualDensity.compact,
               icon: const Icon(
                 Icons.arrow_back,
-                color: Color(0xFF943131),
+                color: Color(0xFFA83232),
                 size: 16,
               ),
               tooltip: 'Voltar',
@@ -419,7 +425,7 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -436,7 +442,9 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
                                       Text(
                                         'Alugue por temporada, gerencie suas reservas e tenha total segurança no recebimento.',
                                         style: TextStyle(
-                                          color: Color(0xFFBAD2DA),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.85,
+                                          ),
                                           fontSize: 12,
                                         ),
                                       ),

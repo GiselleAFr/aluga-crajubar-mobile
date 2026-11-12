@@ -8,7 +8,7 @@ import 'property_details_page.dart';
 /// BottomSheet de resumo do imóvel, compartilhado por Home, Buscar e Favoritos.
 /// Leva para os detalhes ou direto para a solicitação de reserva.
 void showPropertySheet(BuildContext context, Property p) {
-  const primary = Color(0xFF963333);
+  const primary = Color(0xFFA83232);
   final navigator = Navigator.of(context);
 
   showModalBottomSheet<void>(

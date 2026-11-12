@@ -10,7 +10,7 @@ class PropertyDetailsPage extends StatelessWidget {
 
   const PropertyDetailsPage({super.key, required this.property});
 
-  static const _primary = Color(0xFF963333);
+  static const _primary = Color(0xFFA83232);
 
   void _solicitarReserva(BuildContext context) {
     Navigator.of(context).push(

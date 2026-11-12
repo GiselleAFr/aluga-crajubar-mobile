@@ -24,7 +24,7 @@ class ProfileHistorySection extends StatelessWidget {
   final VoidCallback? onVerTodos;
   final ValueChanged<Reservation> onTap;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
   static const _borda = Color(0xFFE8D8D1);
 
   @override
@@ -158,7 +158,7 @@ class _CartaoEstadia extends StatelessWidget {
     width: 190,
     height: 64,
     color: const Color(0xFFE7DDD6),
-    child: const Icon(Icons.home_outlined, color: Color(0xFF963333)),
+    child: const Icon(Icons.home_outlined, color: Color(0xFFA83232)),
   );
 
   @override
@@ -223,7 +223,7 @@ class _CartaoEstadia extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF963333),
+                  color: Color(0xFFA83232),
                   fontWeight: FontWeight.w600,
                 ),
               ),
