@@ -20,7 +20,7 @@ class PropertyInfoSections extends StatelessWidget {
   final bool mostrarWhatsapp;
   final String? mensagemWhatsapp;
 
-  static const _primary = Color(0xFF963333);
+  static const _primary = Color(0xFFA83232);
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +200,7 @@ class _FeatureItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 27, color: const Color(0xFF963333)),
+        Icon(icon, size: 27, color: const Color(0xFFA83232)),
         const SizedBox(height: 8),
         Text(
           value,

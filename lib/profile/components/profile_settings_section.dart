@@ -25,7 +25,7 @@ class ProfileSettingsSection extends StatelessWidget {
       const Text(
         'Configurações',
         style: TextStyle(
-          color: Color(0xFF963333),
+          color: Color(0xFFA83232),
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
@@ -103,7 +103,7 @@ class _SettingsItem extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF963333), size: 18),
+          Icon(icon, color: const Color(0xFFA83232), size: 18),
           const SizedBox(width: 9),
           Expanded(
             child: Text(

@@ -28,7 +28,7 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   final FavoritesStore _store = FavoritesStore.instance;
   int categoriaSelecionada = 0;

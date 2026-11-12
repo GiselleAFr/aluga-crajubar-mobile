@@ -33,7 +33,7 @@ class ProfileSummaryCard extends StatelessWidget {
   /// Se null, o card não é clicável.
   final VoidCallback? onTap;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
   static const _borda = Color(0xFFE8D8D1);
 
   String get _iniciais {
@@ -217,7 +217,7 @@ class _ContatoLinha extends StatelessWidget {
       height: 38,
       child: Row(
         children: [
-          Icon(icone, color: const Color(0xFF963333), size: 18),
+          Icon(icone, color: const Color(0xFFA83232), size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -257,7 +257,7 @@ class _Estatistica extends StatelessWidget {
           style: const TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF963333),
+            color: Color(0xFFA83232),
           ),
         ),
         const SizedBox(height: 2),

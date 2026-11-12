@@ -6,7 +6,7 @@ class HowItWorksSection extends StatelessWidget {
 
   final VoidCallback onAjudaPressed;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +127,7 @@ class _Step extends StatelessWidget {
               color: Color(0xFFF6E3DE),
               shape: BoxShape.circle,
             ),
-            child: Icon(icone, size: 20, color: const Color(0xFF963333)),
+            child: Icon(icone, size: 20, color: const Color(0xFFA83232)),
           ),
           const SizedBox(height: 6),
           Text(
