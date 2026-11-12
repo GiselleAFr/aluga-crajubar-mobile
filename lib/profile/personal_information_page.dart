@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +5,8 @@ import 'package:flutter/services.dart';
 import '../services/auth_service.dart';
 import '../utils/input_formatters.dart';
 
+/// Informações pessoais: o usuário altera nome, telefone e foto.
+/// O e-mail é único e fica somente para leitura.
 class PersonalInformationPage extends StatefulWidget {
   const PersonalInformationPage({
     super.key,
@@ -28,51 +28,51 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _emailController;
-  late final TextEditingController _cpfController;
   late final TextEditingController _phoneController;
+  late final String _initialName;
+  late final String _initialPhoneDigits;
 
   Uint8List? _photoBytes;
   bool _saving = false;
-  bool _loadingCpf = true;
+
+  static String _digits(String? text) =>
+      (text ?? '').replaceAll(RegExp(r'\D'), '');
+
+  /// Telefone sem o +55, como a pessoa digita (10 ou 11 dígitos).
+  static String _nationalDigits(String? phone) =>
+      _digits(phone).replaceFirst(RegExp(r'^55(?=\d{10,11}$)'), '');
 
   @override
   void initState() {
     super.initState();
+    _initialName = widget.user.name.trim();
+    _initialPhoneDigits = _nationalDigits(widget.user.phone);
+
     _nameController = TextEditingController(text: widget.user.name);
-    _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(
-      text: formatBrazilianPhoneDigits(
-        (widget.user.phone ?? '')
-            .replaceAll(RegExp(r'\D'), '')
-            .replaceFirst(RegExp(r'^55(?=\d{10,11}$)'), ''),
-      ),
+      text: formatBrazilianPhoneDigits(_initialPhoneDigits),
     );
-    _cpfController = TextEditingController();
-    _loadCpf();
+
+    // Atualiza as iniciais e o estado do botão Salvar enquanto digita.
+    _nameController.addListener(_onChanged);
+    _phoneController.addListener(_onChanged);
   }
 
-  Future<void> _loadCpf() async {
-    String? cpf;
-    try {
-      cpf = await widget.authService.profileCpf(widget.user.id);
-    } catch (_) {
-      // Em dispositivos sem armazenamento seguro disponível, o formulário
-      // continua utilizável; o CPF será solicitado novamente.
-    }
-    if (!mounted) return;
-    _cpfController.text = cpf ?? '';
-    setState(() => _loadingCpf = false);
+  void _onChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
-    _cpfController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
+
+  /// O botão Salvar só habilita quando há algo novo para enviar.
+  bool get _hasChanges =>
+      _nameController.text.trim() != _initialName ||
+      _digits(_phoneController.text) != _initialPhoneDigits;
 
   String get _initials {
     final parts = _nameController.text
@@ -112,19 +112,21 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     FocusScope.of(context).unfocus();
     if (_saving || !(_formKey.currentState?.validate() ?? false)) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     setState(() => _saving = true);
     try {
       final user = await widget.authService.updateProfile(
         name: _nameController.text,
-        email: _emailController.text,
-        phone: _phoneController.text,
-      );
-      await widget.authService.saveProfileCpf(
-        userId: user.id,
-        cpf: _cpfController.text,
+        // Mesmo formato do cadastro: +55 + DDD + número.
+        phone: '+55${_digits(_phoneController.text)}',
       );
       if (!mounted) return;
-      Navigator.of(context).pop(user);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Dados atualizados com sucesso.')),
+      );
+      navigator.pop(user);
     } on AuthException catch (error) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -145,39 +147,8 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     return null;
   }
 
-  String? _validateEmail(String? value) {
-    final required = _required(value, 'seu e-mail');
-    if (required != null) return required;
-    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value!.trim())) {
-      return 'Informe um e-mail válido.';
-    }
-    return null;
-  }
-
-  String? _validateCpf(String? value) {
-    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
-    if (digits.length != 11) return 'Informe um CPF com 11 dígitos.';
-    if (RegExp(r'^(\d)\1{10}$').hasMatch(digits))
-      return 'Informe um CPF válido.';
-
-    int digitAt(int end) {
-      var sum = 0;
-      for (var index = 0; index < end; index++) {
-        sum += int.parse(digits[index]) * (end + 1 - index);
-      }
-      final remainder = sum % 11;
-      return remainder < 2 ? 0 : 11 - remainder;
-    }
-
-    if (digitAt(9) != int.parse(digits[9]) ||
-        digitAt(10) != int.parse(digits[10])) {
-      return 'Informe um CPF válido.';
-    }
-    return null;
-  }
-
   String? _validatePhone(String? value) {
-    final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+    final digits = _digits(value);
     if (digits.length != 10 && digits.length != 11) {
       return 'Informe um telefone válido.';
     }
@@ -189,12 +160,11 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     backgroundColor: Colors.white,
     appBar: AppBar(
       backgroundColor: _vinho,
-      foregroundColor: Colors.white,
-      elevation: 0,
+      surfaceTintColor: Colors.white,
       centerTitle: true,
       title: const Text(
         'Informações pessoais',
-        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: Colors.white),
       ),
       leading: IconButton(
         tooltip: 'Voltar',
@@ -291,24 +261,10 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
               textCapitalization: TextCapitalization.words,
               validator: (value) => _required(value, 'seu nome'),
             ),
-            _field(
+            _readOnlyField(
               label: 'E-mail',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              validator: _validateEmail,
-            ),
-            _field(
-              label: 'CPF',
-              controller: _cpfController,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [
-                DigitsMaskInputFormatter(
-                  maxDigits: 11,
-                  formatDigits: formatCpfDigits,
-                ),
-              ],
-              validator: _validateCpf,
-              enabled: !_loadingCpf,
+              value: widget.user.email,
+              helper: 'O e-mail é único e não pode ser alterado.',
             ),
             _field(
               label: 'Telefone',
@@ -326,11 +282,12 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
             SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: _saving || _loadingCpf ? null : _save,
+                onPressed: (_saving || !_hasChanges) ? null : _save,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _vinho,
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: _vinho.withValues(alpha: 0.55),
+                  disabledForegroundColor: Colors.white,
                   elevation: 4,
                   shadowColor: _vinho.withValues(alpha: 0.28),
                   shape: const StadiumBorder(),
@@ -366,7 +323,6 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
     List<TextInputFormatter>? inputFormatters,
-    bool enabled = true,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: Column(
@@ -376,7 +332,6 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
         const SizedBox(height: 7),
         TextFormField(
           controller: controller,
-          enabled: enabled,
           keyboardType: keyboardType,
           textCapitalization: textCapitalization,
           inputFormatters: inputFormatters,
@@ -400,6 +355,53 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
             focusedBorder: const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(17)),
               borderSide: BorderSide(color: _vinho, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// Campo que o usuário vê, mas não edita (ex.: e-mail).
+  Widget _readOnlyField({
+    required String label,
+    required String value,
+    required String helper,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 7),
+        TextFormField(
+          initialValue: value,
+          readOnly: true,
+          style: const TextStyle(color: Colors.black54),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFF3F0EE),
+            helperText: helper,
+            suffixIcon: const Icon(
+              Icons.lock_outline,
+              size: 18,
+              color: Colors.black45,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
+            ),
+            border: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(17)),
+              borderSide: BorderSide(color: _borda),
+            ),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(17)),
+              borderSide: BorderSide(color: _borda),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(17)),
+              borderSide: BorderSide(color: _borda),
             ),
           ),
         ),

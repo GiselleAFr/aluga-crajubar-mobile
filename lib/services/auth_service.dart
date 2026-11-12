@@ -81,7 +81,6 @@ class AuthService {
       _storage = storage ?? const FlutterSecureStorage();
 
   static const _tokenKey = 'auth_access_token';
-  static const _cpfKeyPrefix = 'profile_cpf_';
   final http.Client _client;
   final FlutterSecureStorage _storage;
 
@@ -160,17 +159,17 @@ class AuthService {
     return AuthUser.fromJson(user);
   }
 
-  /// Atualiza os dados que fazem parte do perfil público da API.
+  /// Atualiza os dados editáveis do perfil: nome e telefone.
+  /// O e-mail é único e não pode ser alterado.
   Future<AuthUser> updateProfile({
     required String name,
-    required String email,
     required String phone,
   }) async {
     final data = await _request(
       'PATCH',
       '/auth/profile',
       authenticated: true,
-      body: {'name': name.trim(), 'email': email.trim(), 'phone': phone.trim()},
+      body: {'name': name.trim(), 'phone': phone.trim()},
     );
     final user = data['user'];
     if (user is! Map<String, dynamic>) {
@@ -178,14 +177,6 @@ class AuthService {
     }
     return AuthUser.fromJson(user);
   }
-
-  /// CPF ainda não pertence ao contrato da API; ele fica protegido apenas
-  /// neste aparelho até que o back-end disponibilize um campo próprio.
-  Future<String?> profileCpf(int userId) =>
-      _storage.read(key: '$_cpfKeyPrefix$userId');
-
-  Future<void> saveProfileCpf({required int userId, required String cpf}) =>
-      _storage.write(key: '$_cpfKeyPrefix$userId', value: cpf);
 
   Future<void> logout() async {
     final token = await _storage.read(key: _tokenKey);

@@ -26,6 +26,7 @@ import '../properties/property_details_page.dart';
 import '../properties/property_sheet.dart';
 import '../reservation/reservations_page.dart';
 import '../security/security_page.dart';
+import '../notifications/notification_center.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.user});
@@ -65,6 +66,10 @@ class _HomePageState extends State<HomePage> {
     // Quando uma solicitação é criada ou cancelada, o card de status atualiza.
     ReservationService.changes.addListener(_carregarStatus);
     _carregarTudo();
+
+    NotificationCenter.instance.start(
+      onSelected: (_) { if (mounted) _abrirReservas(); },
+    );
   }
 
   @override
@@ -375,6 +380,8 @@ class _HomePageState extends State<HomePage> {
     } catch (error) {
       debugPrint('Não foi possível concluir o logout remoto: $error');
     }
+
+    await NotificationCenter.instance.stop();
 
     FavoritesStore.instance.clear();
 

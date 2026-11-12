@@ -79,7 +79,7 @@ class _MeuAppState extends State<MeuApp> {
       navigatorKey: appNavigatorKey,
       scrollBehavior: const AppScrollBehavior(),
       debugShowCheckedModeBanner: false,
-      title: 'Aluga Cariri',
+      title: 'Aluga Crajubar',
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: const [

@@ -15,6 +15,7 @@ import 'components/profile_settings_section.dart';
 import 'components/profile_summary_card.dart';
 import 'components/history_page.dart';
 import 'personal_information_page.dart';
+import '../notifications/notification_settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String nomeUsuario;
@@ -61,6 +62,10 @@ class _ProfilePageState extends State<ProfilePage> {
   late final AuthService _authService;
   late final bool _ownsAuthService;
   final ReservationService _reservationService = ReservationService();
+
+  void _abrirNotificacoes() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const NotificationSettingsPage()),
+  );
 
   AuthUser? _user;
   List<Reservation> _reservas = [];
@@ -263,7 +268,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               () => _aviso('Segurança e login em breve.'),
                           onNotificacoes:
                               widget.onNotificacoes ??
-                              () => _aviso('Notificações em breve.'),
+                              _abrirNotificacoes,
                           /*onMetodoPagamento:
                               widget.onMetodoPagamento ??
                               () => _aviso('Método de pagamento em breve.'),*/

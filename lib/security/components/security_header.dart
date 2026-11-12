@@ -46,7 +46,7 @@ class SecurityHeader extends StatelessWidget implements PreferredSizeWidget {
       title: const Text(
         'Segurança e Login',
         style: TextStyle(
-          fontSize: 18,
+          fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
       ),
