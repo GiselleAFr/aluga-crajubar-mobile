@@ -27,7 +27,7 @@ class ReservationsPage extends StatefulWidget {
 }
 
 class _ReservationsPageState extends State<ReservationsPage> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   static const List<(String, String)> _filtros = [
     ('pending', 'Pendentes'),

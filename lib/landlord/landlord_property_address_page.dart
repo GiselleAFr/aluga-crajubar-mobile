@@ -24,8 +24,8 @@ class LandlordPropertyAddressPage extends StatefulWidget {
 
 class _LandlordPropertyAddressPageState
     extends State<LandlordPropertyAddressPage> {
-  static const _wine = Color(0xFF943131);
-  static const _almond = Color(0xFFD9BDA6);
+  static const _wine = Color(0xFFA83232);
+  static const _almond = Color(0xFFE8BDBD);
   static const _muted = Color(0xFF666666);
 
   final _formKey = GlobalKey<FormState>();

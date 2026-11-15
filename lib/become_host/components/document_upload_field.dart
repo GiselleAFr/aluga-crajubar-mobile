@@ -15,7 +15,10 @@ class DocumentUploadField extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return CustomPaint(
-      painter: _DashedRoundedBorder(color: const Color(0xFFD9BDA6), radius: 16),
+      painter: _DashedRoundedBorder(
+        color: primaryColor.withValues(alpha: 0.4),
+        radius: 16,
+      ),
       child: Material(
         color: const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(16),

@@ -16,7 +16,7 @@ class ReservationRequestPage extends StatefulWidget {
 }
 
 class _ReservationRequestPageState extends State<ReservationRequestPage> {
-  static const _primary = Color(0xFF963333);
+  static const _primary = Color(0xFFA83232);
   static const _maxHospedes = 20;
   static const _maxMeses = 12;
 

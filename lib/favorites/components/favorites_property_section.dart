@@ -39,7 +39,7 @@ class FavoritesPropertySection extends StatelessWidget {
                       Text(
                         titulo.toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF963333),
+                          color: Color(0xFFA83232),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -57,7 +57,7 @@ class FavoritesPropertySection extends StatelessWidget {
                   child: const Text(
                     'Ver todos',
                     style: TextStyle(
-                      color: Color(0xFF963333),
+                      color: Color(0xFFA83232),
                       fontSize: 14,
                       decoration: TextDecoration.underline,
                     ),

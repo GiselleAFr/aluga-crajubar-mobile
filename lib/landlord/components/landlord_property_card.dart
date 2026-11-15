@@ -14,7 +14,7 @@ class LandlordPropertyCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
-  static const _wine = Color(0xFF963333);
+  static const _wine = Color(0xFFA83232);
 
   Color get _statusColor => switch (property.status) {
     LandlordPropertyStatus.available => const Color(0xFF26734D),
@@ -134,7 +134,7 @@ class LandlordPropertyCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     icon: const Icon(
                       Icons.delete_outline,
-                      color: Color(0xFFB3261E),
+                      color: Color(0xFFA83232),
                       size: 20,
                     ),
                   ),

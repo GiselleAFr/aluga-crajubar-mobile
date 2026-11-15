@@ -31,7 +31,7 @@ class LandlordPropertiesPage extends StatefulWidget {
 }
 
 class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
-  static const _wine = Color(0xFF963333);
+  static const _wine = Color(0xFFA83232);
 
   final _searchController = TextEditingController();
   late final List<LandlordPropertyDraft> _properties;
@@ -101,7 +101,7 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFB3261E),
+              backgroundColor: const Color(0xFFA83232),
             ),
             child: const Text('Excluir'),
           ),

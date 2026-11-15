@@ -17,7 +17,7 @@ class PageHeader extends StatelessWidget {
   final String subtitulo;
   final Widget? child;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   @override
   Widget build(BuildContext context) {

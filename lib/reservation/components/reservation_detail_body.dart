@@ -14,7 +14,7 @@ class ReservationDetailBody extends StatelessWidget {
 
   final Reservation reservation;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   String get _endereco {
     final p = reservation.property;

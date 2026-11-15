@@ -27,9 +27,9 @@ class LandlordPropertyPhotosPage extends StatefulWidget {
 
 class _LandlordPropertyPhotosPageState
     extends State<LandlordPropertyPhotosPage> {
-  static const _wine = Color(0xFF943131);
-  static const _almond = Color(0xFFD9BDA6);
-  static const _soft = Color(0xFFF4ECE7);
+  static const _wine = Color(0xFFA83232);
+  static const _almond = Color(0xFFE8BDBD);
+  static const _soft = Color(0xFFFDECEC);
   static const _maxPhotos = 10;
 
   final List<Uint8List> _photos = [];
@@ -258,7 +258,7 @@ class _LandlordPropertyPhotosPageState
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFBAD2DA),
+                        color: _soft,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -325,7 +325,7 @@ class _LandlordPropertyPhotosPageState
               color: _wine,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x14943131),
+                  color: Color(0x14A83232),
                   blurRadius: 18,
                   offset: Offset(0, 8),
                 ),
@@ -369,7 +369,7 @@ class _LandlordPropertyPhotosPageState
                       ? 'Adicione, remova ou escolha a foto principal do imóvel.'
                       : 'Mostre os melhores detalhes e ajude seu anúncio a se destacar.',
                   style: TextStyle(
-                    color: Color(0xFFE8D3C3),
+                    color: Color(0xFFF7DADA),
                     fontSize: 13,
                     height: 1.4,
                   ),

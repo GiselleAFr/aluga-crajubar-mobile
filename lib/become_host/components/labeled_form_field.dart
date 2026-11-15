@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const _fieldFill = Color(0xFFF9FAFB);
-const _fieldBorder = Color(0xFFD9BDA6);
 const _fieldRadius = 16.0;
 
 class LabeledTextFormField extends StatelessWidget {
@@ -36,6 +35,7 @@ class LabeledTextFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final fieldBorder = primaryColor.withValues(alpha: 0.3);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,11 +76,11 @@ class LabeledTextFormField extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(_fieldRadius),
-              borderSide: const BorderSide(color: _fieldBorder),
+              borderSide: BorderSide(color: fieldBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(_fieldRadius),
-              borderSide: const BorderSide(color: _fieldBorder),
+              borderSide: BorderSide(color: fieldBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(_fieldRadius),
