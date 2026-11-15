@@ -20,6 +20,7 @@ import 'components/search_invite.dart';
 import 'home_status.dart';
 import '../responsive_content.dart';
 import '../services/auth_service.dart';
+import '../services/landlord_property_service.dart';
 import '../services/property_service.dart';
 import '../services/reservation_service.dart';
 import '../properties/property_details_page.dart';
@@ -45,6 +46,9 @@ class _HomePageState extends State<HomePage> {
   final _authService = AuthService();
   final _propertyService = PropertyService();
   final _reservationService = ReservationService();
+  late final _landlordPropertyService = LandlordPropertyService(
+    accessToken: () => _authService.accessToken,
+  );
   final _buscaController = TextEditingController();
 
   AuthUser? _user;
@@ -61,7 +65,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _user = widget.user;
-    _isLandlord = widget.user?.isLandlord ?? false;
+    _isLandlord = widget.user?.role == 'landlord';
     // Quando uma solicitação é criada ou cancelada, o card de status atualiza.
     ReservationService.changes.addListener(_carregarStatus);
     _carregarTudo();
@@ -73,6 +77,7 @@ class _HomePageState extends State<HomePage> {
     _buscaController.dispose();
     _propertyService.close();
     _reservationService.close();
+    _landlordPropertyService.close();
     _authService.close();
     super.dispose();
   }
@@ -93,7 +98,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _user = atualizado;
-          _isLandlord = _isLandlord || atualizado.isLandlord;
+          _isLandlord = atualizado.role == 'landlord';
         });
       }
     } catch (_) {
@@ -256,13 +261,29 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _abrirImoveisLocador() {
+  Future<void> _abrirImoveisLocador() async {
+    if (!_isLandlord) return;
+
+    List<LandlordPropertyDraft> properties;
+    try {
+      properties = await _landlordPropertyService.list();
+    } on LandlordPropertyApiException catch (error) {
+      if (mounted) _aviso(error.message);
+      return;
+    }
+
+    if (!mounted) return;
+    _landlordProperties
+      ..clear()
+      ..addAll(properties);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: LandlordPropertiesPage.routeName),
         builder: (_) => LandlordPropertiesPage(
           userName: _user?.name ?? widget.user?.name ?? 'viajante',
           properties: List.unmodifiable(_landlordProperties),
+          onSaveProperty: _landlordPropertyService.update,
+          onDeleteProperty: _landlordPropertyService.delete,
           onPropertiesChanged: (properties) {
             setState(() {
               _landlordProperties
@@ -277,14 +298,18 @@ class _HomePageState extends State<HomePage> {
                   name: LandlordPropertyAddressPage.routeName,
                 ),
                 builder: (_) => LandlordPropertyAddressPage(
-                  onPropertyCreated: (property) {
-                    onPropertyCreated(property);
+                  onPropertyCreated: (property) async {
+                    final created = await _landlordPropertyService.create(
+                      property,
+                    );
+                    await onPropertyCreated(created);
+                    if (!mounted) return;
                     Navigator.of(context).popUntil(
                       (route) =>
                           route.settings.name ==
                           LandlordPropertiesPage.routeName,
                     );
-                    _aviso('Imóvel adicionado à lista de demonstração.');
+                    _aviso('Imóvel cadastrado com sucesso.');
                   },
                   onItemSelecionado: (indice) {
                     if (indice == 5) return;
@@ -324,8 +349,8 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProfilePage(
-          nomeUsuario: widget.user?.name ?? 'viajante',
-          user: widget.user,
+          nomeUsuario: _user?.name ?? 'viajante',
+          user: _user,
           authService: _authService,
           indiceSelecionado: indice,
           mostrarLocador: _isLandlord,
@@ -334,10 +359,25 @@ class _HomePageState extends State<HomePage> {
             Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => BecomeHostPage(
-                  onSubmit: (_) {
-                    setState(() => _isLandlord = true);
+                  onSubmit: (form) async {
+                    await _authService.submitLandlordRequest(
+                      fullName: form.fullName,
+                      cpf: form.cpf,
+                      birthDate: form.birthDate,
+                      documentType: form.documentType.name,
+                      email: form.email,
+                      primaryPhone: form.primaryPhone,
+                      secondaryPhone: form.secondaryPhone,
+                      commercialPhone: form.commercialPhone,
+                      documentFrontBytes: form.documentFront.bytes,
+                      documentFrontFileName: form.documentFront.fileName,
+                      documentBackBytes: form.documentBack.bytes,
+                      documentBackFileName: form.documentBack.fileName,
+                    );
+                    await _atualizarUsuarioEStatus();
+                    if (!mounted) return;
                     Navigator.of(context).popUntil((route) => route.isFirst);
-                    _aviso('Cadastro de locador concluído nesta demonstração.');
+                    _aviso('Solicitação enviada. Aguarde a análise.');
                   },
                 ),
               ),

@@ -1,15 +1,19 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'components/document_upload_field.dart';
 import 'components/form_section.dart';
 import 'components/labeled_form_field.dart';
 import 'models/become_host_form.dart';
+import '../services/auth_service.dart';
 import '../utils/input_formatters.dart';
 
 class BecomeHostPage extends StatefulWidget {
-  const BecomeHostPage({super.key, this.onSubmit});
+  const BecomeHostPage({super.key, this.onSubmit, this.documentPicker});
 
-  final ValueChanged<BecomeHostForm>? onSubmit;
+  final Future<void> Function(BecomeHostForm form)? onSubmit;
+  final Future<HostDocumentPhoto?> Function(bool isFront)? documentPicker;
 
   @override
   State<BecomeHostPage> createState() => _BecomeHostPageState();
@@ -17,6 +21,8 @@ class BecomeHostPage extends StatefulWidget {
 
 class _BecomeHostPageState extends State<BecomeHostPage> {
   static const _backgroundColor = Color(0xFFF9FAFB);
+  static const _maxDocumentSizeBytes = 10 * 1024 * 1024;
+  static const _allowedDocumentExtensions = {'jpg', 'jpeg', 'png'};
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
@@ -28,6 +34,12 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
   late final TextEditingController _commercialPhoneController;
 
   HostDocumentType _documentType = HostDocumentType.rg;
+  HostDocumentPhoto? _documentFront;
+  HostDocumentPhoto? _documentBack;
+  bool _isPickingFront = false;
+  bool _isPickingBack = false;
+  bool _showDocumentErrors = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -111,16 +123,88 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
     });
   }
 
-  void _showUploadUnavailable() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('A seleção de documentos ainda não está disponível.'),
-      ),
+  Future<HostDocumentPhoto?> _pickDocument() async {
+    final selectedFile = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Imagens', extensions: ['jpg', 'jpeg', 'png']),
+      ],
+    );
+    if (selectedFile == null) return null;
+    if (await selectedFile.length() > _maxDocumentSizeBytes) {
+      throw const AuthException('Cada imagem pode ter no máximo 10 MB.');
+    }
+
+    return HostDocumentPhoto(
+      bytes: await selectedFile.readAsBytes(),
+      fileName: selectedFile.name,
     );
   }
 
-  void _submit() {
+  Future<void> _selectDocument({required bool isFront}) async {
+    if (_isSubmitting || _isPickingFront || _isPickingBack) return;
+
+    setState(() {
+      if (isFront) {
+        _isPickingFront = true;
+      } else {
+        _isPickingBack = true;
+      }
+    });
+
+    try {
+      final selected = await (widget.documentPicker ?? (_) => _pickDocument())(
+        isFront,
+      );
+      if (!mounted || selected == null) return;
+
+      final extension = selected.fileName.split('.').last.toLowerCase();
+      if (!selected.fileName.contains('.') ||
+          !_allowedDocumentExtensions.contains(extension)) {
+        _showDocumentError('Selecione uma imagem JPG ou PNG.');
+        return;
+      }
+      if (selected.bytes.isEmpty) {
+        _showDocumentError('O arquivo selecionado está vazio.');
+        return;
+      }
+      if (selected.bytes.length > _maxDocumentSizeBytes) {
+        _showDocumentError('Cada imagem pode ter no máximo 10 MB.');
+        return;
+      }
+
+      setState(() {
+        if (isFront) {
+          _documentFront = selected;
+        } else {
+          _documentBack = selected;
+        }
+      });
+    } on AuthException catch (error) {
+      if (mounted) _showDocumentError(error.message);
+    } on PlatformException {
+      if (mounted) _showDocumentError('Não foi possível selecionar a imagem.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingFront = false;
+          _isPickingBack = false;
+        });
+      }
+    }
+  }
+
+  void _showDocumentError(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_documentFront == null || _documentBack == null) {
+      setState(() => _showDocumentErrors = true);
+      return;
+    }
 
     final birthDateParts = _birthDateController.text.split('/');
     final birthDate = DateTime(
@@ -137,6 +221,8 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
       primaryPhone: _primaryPhoneController.text.trim(),
       secondaryPhone: _secondaryPhoneController.text.trim(),
       commercialPhone: _commercialPhoneController.text.trim(),
+      documentFront: _documentFront!,
+      documentBack: _documentBack!,
     );
 
     if (widget.onSubmit == null) {
@@ -148,7 +234,16 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
       return;
     }
 
-    widget.onSubmit!(form);
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.onSubmit!(form);
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   Widget _documentTypeButton(HostDocumentType documentType) {
@@ -308,12 +403,24 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
         children: [
           DocumentUploadField(
             label: 'Enviar foto do documento (frente)',
-            onPressed: _showUploadUnavailable,
+            onPressed: () => _selectDocument(isFront: true),
+            fileName: _documentFront?.fileName,
+            isLoading: _isPickingFront,
+            enabled: !_isSubmitting && !_isPickingFront && !_isPickingBack,
+            errorText: _showDocumentErrors && _documentFront == null
+                ? 'Envie a frente do documento.'
+                : null,
           ),
           const SizedBox(height: 12),
           DocumentUploadField(
             label: 'Enviar foto do documento (verso)',
-            onPressed: _showUploadUnavailable,
+            onPressed: () => _selectDocument(isFront: false),
+            fileName: _documentBack?.fileName,
+            isLoading: _isPickingBack,
+            enabled: !_isSubmitting && !_isPickingFront && !_isPickingBack,
+            errorText: _showDocumentErrors && _documentBack == null
+                ? 'Envie o verso do documento.'
+                : null,
           ),
         ],
       ),
@@ -457,19 +564,32 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
                             height: 52,
                             width: double.infinity,
                             child: FilledButton(
-                              onPressed: _submit,
+                              onPressed:
+                                  _isSubmitting ||
+                                      _isPickingFront ||
+                                      _isPickingBack
+                                  ? null
+                                  : _submit,
                               style: FilledButton.styleFrom(
                                 backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 shape: const StadiumBorder(),
                               ),
-                              child: const Text(
-                                'Enviar Cadastro de Locador',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              child: _isSubmitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Enviar Cadastro de Locador',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(height: 12),

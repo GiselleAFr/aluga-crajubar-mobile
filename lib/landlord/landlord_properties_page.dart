@@ -6,6 +6,7 @@ import '../shared/search_field.dart';
 import 'components/landlord_property_card.dart';
 import 'landlord_property_photos_page.dart';
 import 'models/landlord_property_draft.dart';
+import '../services/landlord_property_service.dart';
 
 class LandlordPropertiesPage extends StatefulWidget {
   static const routeName = '/landlord/properties';
@@ -16,14 +17,21 @@ class LandlordPropertiesPage extends StatefulWidget {
     required this.onItemSelecionado,
     required this.onAdicionarImovel,
     this.onPropertiesChanged,
+    this.onSaveProperty,
+    this.onDeleteProperty,
     this.properties = const [],
   });
 
   final String userName;
   final ValueChanged<int> onItemSelecionado;
-  final void Function(ValueChanged<LandlordPropertyDraft> onPropertyCreated)
+  final void Function(
+    Future<void> Function(LandlordPropertyDraft property) onPropertyCreated,
+  )
   onAdicionarImovel;
   final ValueChanged<List<LandlordPropertyDraft>>? onPropertiesChanged;
+  final Future<LandlordPropertyDraft> Function(LandlordPropertyDraft property)?
+  onSaveProperty;
+  final Future<void> Function(int id)? onDeleteProperty;
   final List<LandlordPropertyDraft> properties;
 
   @override
@@ -35,28 +43,52 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
 
   final _searchController = TextEditingController();
   late final List<LandlordPropertyDraft> _properties;
+  String _sort = 'recentes';
 
   @override
   void initState() {
     super.initState();
     _properties = List.of(widget.properties);
+    _searchController.addListener(_handleSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_handleSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  void _showUnavailableMessage(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature ficará disponível quando houver imóveis.'),
-      ),
-    );
+  void _handleSearchChanged() {
+    if (mounted) setState(() {});
   }
 
-  void _propertyCreated(LandlordPropertyDraft property) {
+  List<int> get _visiblePropertyIndexes {
+    final query = _searchController.text.trim().toLowerCase();
+    final indexes = List<int>.generate(_properties.length, (index) => index)
+      ..removeWhere((index) {
+        if (query.isEmpty) return false;
+        final property = _properties[index];
+        return !property.name.toLowerCase().contains(query) &&
+            !property.location.toLowerCase().contains(query);
+      });
+
+    if (_sort == 'menor-preco') {
+      indexes.sort(
+        (left, right) =>
+            _properties[left].price.compareTo(_properties[right].price),
+      );
+    } else if (_sort == 'maior-preco') {
+      indexes.sort(
+        (left, right) =>
+            _properties[right].price.compareTo(_properties[left].price),
+      );
+    }
+
+    return indexes;
+  }
+
+  Future<void> _propertyCreated(LandlordPropertyDraft property) async {
     setState(() => _properties.insert(0, property));
     _notifyPropertiesChanged();
   }
@@ -68,8 +100,13 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
         builder: (_) => LandlordPropertyPhotosPage(
           address: property.address,
           initialProperty: property,
-          onPropertyCreated: (updatedProperty) {
-            setState(() => _properties[index] = updatedProperty);
+          onPropertyCreated: (updatedProperty) async {
+            final save = widget.onSaveProperty;
+            final savedProperty = save == null
+                ? updatedProperty
+                : await save(updatedProperty);
+            if (!mounted) return;
+            setState(() => _properties[index] = savedProperty);
             _notifyPropertiesChanged();
             Navigator.of(context).popUntil(
               (route) =>
@@ -77,7 +114,7 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
                   route.isFirst,
             );
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Imóvel de exemplo atualizado.')),
+              const SnackBar(content: Text('Imóvel atualizado com sucesso.')),
             );
           },
         ),
@@ -86,12 +123,16 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
   }
 
   Future<void> _confirmDeleteProperty(int index) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final property = _properties[index];
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir imóvel?'),
         content: Text(
-          'O imóvel "${_properties[index].name}" será removido desta demonstração.',
+          property.id == null
+              ? 'O imóvel "${property.name}" será removido desta demonstração.'
+              : 'O imóvel "${property.name}" será excluído da sua conta.',
         ),
         actions: [
           TextButton(
@@ -110,12 +151,35 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
     );
 
     if (shouldDelete != true || !mounted) return;
-    final deletedName = _properties[index].name;
+    if (property.id != null) {
+      final delete = widget.onDeleteProperty;
+      if (delete == null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('A exclusão pela API não está disponível.'),
+          ),
+        );
+        return;
+      }
+      try {
+        await delete(property.id!);
+      } on LandlordPropertyApiException catch (error) {
+        if (!mounted) return;
+        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+        return;
+      }
+    }
+
+    final deletedName = property.name;
     setState(() => _properties.removeAt(index));
     _notifyPropertiesChanged();
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
-        content: Text('Imóvel "$deletedName" removido da demonstração.'),
+        content: Text(
+          property.id == null
+              ? 'Imóvel "$deletedName" removido da demonstração.'
+              : 'Imóvel "$deletedName" excluído com sucesso.',
+        ),
       ),
     );
   }
@@ -137,7 +201,7 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
             child: SearchField(
               controller: _searchController,
               hintText: 'Buscar meus imóveis...',
-              onSubmitted: (_) => _showUnavailableMessage('A busca'),
+              onSubmitted: (_) => _handleSearchChanged(),
             ),
           ),
           Expanded(
@@ -188,8 +252,7 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
                       ),
                       PopupMenuButton<String>(
                         tooltip: 'Ordenar imóveis',
-                        onSelected: (_) =>
-                            _showUnavailableMessage('A ordenação'),
+                        onSelected: (sort) => setState(() => _sort = sort),
                         itemBuilder: (context) => const [
                           PopupMenuItem(
                             value: 'recentes',
@@ -219,13 +282,14 @@ class _LandlordPropertiesPageState extends State<LandlordPropertiesPage> {
                       ),
                     ],
                   ),
-                  if (_properties.isNotEmpty) ...[
+                  if (_properties.isNotEmpty &&
+                      _visiblePropertyIndexes.isEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Center(child: Text('Nenhum imóvel encontrado.')),
+                  ],
+                  if (_visiblePropertyIndexes.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    for (
-                      var index = 0;
-                      index < _properties.length;
-                      index++
-                    ) ...[
+                    for (final index in _visiblePropertyIndexes) ...[
                       LandlordPropertyCard(
                         property: _properties[index],
                         onEdit: () => _editProperty(index),

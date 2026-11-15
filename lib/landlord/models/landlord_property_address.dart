@@ -16,10 +16,17 @@ class LandlordPropertyAddress {
   final String complement;
 
   String get formattedAddress {
-    final streetAddress = '$street, $number';
+    final streetAddress = [
+      street.trim(),
+      number.trim(),
+    ].where((part) => part.isNotEmpty).join(', ');
     final addressWithComplement = complement.isEmpty
         ? streetAddress
         : '$streetAddress, $complement';
-    return '$neighborhood · $addressWithComplement · $city';
+    return [
+      neighborhood,
+      addressWithComplement,
+      city,
+    ].where((part) => part.isNotEmpty).join(' · ');
   }
 }

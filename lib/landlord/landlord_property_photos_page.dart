@@ -17,7 +17,8 @@ class LandlordPropertyPhotosPage extends StatefulWidget {
 
   final LandlordPropertyAddress address;
   final LandlordPropertyDraft? initialProperty;
-  final ValueChanged<LandlordPropertyDraft>? onPropertyCreated;
+  final Future<void> Function(LandlordPropertyDraft property)?
+  onPropertyCreated;
   final Future<List<Uint8List>?> Function(int remaining)? onPickFiles;
 
   @override
@@ -32,7 +33,7 @@ class _LandlordPropertyPhotosPageState
   static const _soft = Color(0xFFF4ECE7);
   static const _maxPhotos = 10;
 
-  final List<Uint8List> _photos = [];
+  final List<LandlordPropertyPhoto> _photos = [];
   int? _mainPhotoIndex;
   bool _isPicking = false;
 
@@ -54,13 +55,20 @@ class _LandlordPropertyPhotosPageState
         child: child,
       );
 
-  Future<List<Uint8List>?> _pickImages(int remaining) async {
+  Future<List<LandlordPropertyPhoto>?> _pickImages() async {
     final selected = await openFiles(
       acceptedTypeGroups: const [
         XTypeGroup(label: 'Imagens', extensions: ['jpg', 'jpeg', 'png']),
       ],
     );
-    return Future.wait(selected.map((image) => image.readAsBytes()));
+    return Future.wait(
+      selected.map(
+        (image) async => LandlordPropertyPhoto.local(
+          bytes: await image.readAsBytes(),
+          fileName: image.name,
+        ),
+      ),
+    );
   }
 
   Future<void> _addImages() async {
@@ -69,8 +77,11 @@ class _LandlordPropertyPhotosPageState
     setState(() => _isPicking = true);
     try {
       final remaining = _maxPhotos - _photos.length;
-      final picked =
-          await (widget.onPickFiles?.call(remaining) ?? _pickImages(remaining));
+      final picked = widget.onPickFiles == null
+          ? await _pickImages()
+          : (await widget.onPickFiles!(remaining))
+                ?.map((bytes) => LandlordPropertyPhoto.local(bytes: bytes))
+                .toList();
       if (!mounted || picked == null || picked.isEmpty) return;
 
       final additions = picked.take(remaining).toList();
@@ -228,7 +239,7 @@ class _LandlordPropertyPhotosPageState
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.memory(_photos[index], fit: BoxFit.cover),
+            _buildPhotoImage(_photos[index]),
             Positioned(
               top: 8,
               right: 8,
@@ -296,6 +307,32 @@ class _LandlordPropertyPhotosPageState
       ),
     );
   }
+
+  Widget _buildPhotoImage(LandlordPropertyPhoto photo) {
+    final bytes = photo.bytes;
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _photoPlaceholder(),
+      );
+    }
+
+    final url = photo.url;
+    if (url == null || url.isEmpty) return _photoPlaceholder();
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _photoPlaceholder(),
+    );
+  }
+
+  Widget _photoPlaceholder() => Container(
+    color: _soft,
+    child: const Center(
+      child: Icon(Icons.image_not_supported_outlined, color: _wine),
+    ),
+  );
 
   Widget _buildGallery() => LayoutBuilder(
     builder: (context, constraints) {
@@ -418,7 +455,7 @@ class _LandlordPropertyPhotosPageState
                         Text('💡', style: TextStyle(fontSize: 16)),
                         SizedBox(height: 8),
                         Text(
-                          'Use fotos claras e horizontais. A primeira imagem será a capa do anúncio.',
+                          'Use fotos claras e horizontais. A foto selecionada será a capa do anúncio.',
                           style: TextStyle(
                             color: Color(0xFF666666),
                             fontSize: 11,

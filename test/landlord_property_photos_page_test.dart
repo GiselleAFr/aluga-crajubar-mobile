@@ -80,7 +80,7 @@ final _smallPng = Uint8List.fromList([
 void main() {
   Widget buildTestApp({
     Future<List<Uint8List>?> Function(int remaining)? onPickFiles,
-    ValueChanged<LandlordPropertyDraft>? onPropertyCreated,
+    Future<void> Function(LandlordPropertyDraft property)? onPropertyCreated,
     LandlordPropertyDraft? initialProperty,
   }) => MaterialApp(
     home: LandlordPropertyPhotosPage(
@@ -190,7 +190,9 @@ void main() {
     await tester.pumpWidget(
       buildTestApp(
         onPickFiles: (_) async => [_smallPng],
-        onPropertyCreated: (property) => createdProperty = property,
+        onPropertyCreated: (property) async {
+          createdProperty = property;
+        },
       ),
     );
 
@@ -203,6 +205,24 @@ void main() {
     fields.elementAt(0).controller!.text = 'Casa do Centro';
     fields.elementAt(1).controller!.text = 'Casa com quintal.';
     fields.elementAt(2).controller!.text = '350,00';
+
+    final typeField = find.byType(
+      DropdownButtonFormField<LandlordPropertyType>,
+    );
+    await tester.ensureVisible(typeField);
+    await tester.tap(typeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Casa').last);
+    await tester.pumpAndSettle();
+
+    final purposeField = find.byType(
+      DropdownButtonFormField<LandlordPropertyPurpose>,
+    );
+    await tester.ensureVisible(purposeField);
+    await tester.tap(purposeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aluguel').last);
+    await tester.pumpAndSettle();
 
     final continueButton = find.widgetWithText(
       FilledButton,
@@ -218,7 +238,7 @@ void main() {
     expect(createdProperty!.photos, hasLength(1));
     expect(createdProperty!.mainPhotoIndex, 0);
     expect(createdProperty!.address.city, 'Crato');
-    expect(createdProperty!.pricePerNight, 350);
+    expect(createdProperty!.price, 350);
   });
 
   testWidgets('editing keeps existing photos and saves gallery changes', (
@@ -234,8 +254,11 @@ void main() {
         number: '123',
         complement: '',
       ),
-      pricePerNight: 350,
-      photos: [_smallPng, _smallPng],
+      price: 350,
+      photos: [
+        LandlordPropertyPhoto.local(bytes: _smallPng),
+        LandlordPropertyPhoto.local(bytes: _smallPng),
+      ],
       mainPhotoIndex: 0,
     );
     LandlordPropertyDraft? updatedProperty;
@@ -244,7 +267,9 @@ void main() {
       buildTestApp(
         initialProperty: initialProperty,
         onPickFiles: (_) async => [_smallPng],
-        onPropertyCreated: (property) => updatedProperty = property,
+        onPropertyCreated: (property) async {
+          updatedProperty = property;
+        },
       ),
     );
 

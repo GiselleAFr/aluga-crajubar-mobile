@@ -5,10 +5,18 @@ class DocumentUploadField extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.fileName,
+    this.errorText,
+    this.isLoading = false,
+    this.enabled = true,
   });
 
   final String label;
   final VoidCallback onPressed;
+  final String? fileName;
+  final String? errorText;
+  final bool isLoading;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +28,7 @@ class DocumentUploadField extends StatelessWidget {
         color: const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          onTap: onPressed,
+          onTap: enabled && !isLoading ? onPressed : null,
           borderRadius: BorderRadius.circular(16),
           child: SizedBox(
             width: double.infinity,
@@ -28,11 +36,23 @@ class DocumentUploadField extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.camera_alt_outlined,
-                    color: primaryColor,
-                    size: 24,
-                  ),
+                  if (isLoading)
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: primaryColor,
+                      ),
+                    )
+                  else
+                    Icon(
+                      fileName == null
+                          ? Icons.camera_alt_outlined
+                          : Icons.check_circle_outline,
+                      color: primaryColor,
+                      size: 24,
+                    ),
                   const SizedBox(height: 8),
                   Text(
                     label,
@@ -43,6 +63,41 @@ class DocumentUploadField extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (fileName != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      fileName!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF666666),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  if (errorText != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      errorText!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                  if (!isLoading && fileName == null && errorText == null)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        'JPG ou PNG, até 10 MB',
+                        style: TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),

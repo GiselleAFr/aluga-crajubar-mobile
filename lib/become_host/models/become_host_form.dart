@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum HostDocumentType {
   rg('RG'),
   cnh('CNH'),
@@ -6,6 +8,13 @@ enum HostDocumentType {
   const HostDocumentType(this.label);
 
   final String label;
+}
+
+class HostDocumentPhoto {
+  const HostDocumentPhoto({required this.bytes, required this.fileName});
+
+  final Uint8List bytes;
+  final String fileName;
 }
 
 class BecomeHostForm {
@@ -18,6 +27,8 @@ class BecomeHostForm {
     required this.primaryPhone,
     required this.secondaryPhone,
     required this.commercialPhone,
+    required this.documentFront,
+    required this.documentBack,
   });
 
   final String fullName;
@@ -28,4 +39,6 @@ class BecomeHostForm {
   final String primaryPhone;
   final String secondaryPhone;
   final String commercialPhone;
+  final HostDocumentPhoto documentFront;
+  final HostDocumentPhoto documentBack;
 }

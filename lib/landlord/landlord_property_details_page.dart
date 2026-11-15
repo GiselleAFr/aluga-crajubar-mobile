@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/landlord_property_service.dart';
 import 'models/landlord_property_address.dart';
 import 'models/landlord_property_draft.dart';
 
@@ -15,10 +16,11 @@ class LandlordPropertyDetailsPage extends StatefulWidget {
   });
 
   final LandlordPropertyAddress address;
-  final List<Uint8List> photos;
+  final List<LandlordPropertyPhoto> photos;
   final int mainPhotoIndex;
   final LandlordPropertyDraft? initialProperty;
-  final ValueChanged<LandlordPropertyDraft>? onPropertyCreated;
+  final Future<void> Function(LandlordPropertyDraft property)?
+  onPropertyCreated;
 
   @override
   State<LandlordPropertyDetailsPage> createState() =>
@@ -36,6 +38,10 @@ class _LandlordPropertyDetailsPageState
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   LandlordPropertyStatus _status = LandlordPropertyStatus.available;
+  LandlordPropertyType? _type;
+  LandlordPropertyPurpose? _purpose;
+  LandlordRentalPeriod? _rentalPeriod;
+  bool _isSaving = false;
 
   bool get _isEditing => widget.initialProperty != null;
 
@@ -46,10 +52,13 @@ class _LandlordPropertyDetailsPageState
     if (property != null) {
       _nameController.text = property.name;
       _descriptionController.text = property.description;
-      _priceController.text = property.pricePerNight
+      _priceController.text = property.price
           .toStringAsFixed(2)
           .replaceAll('.', ',');
       _status = property.status;
+      _type = property.type;
+      _purpose = property.purpose;
+      _rentalPeriod = property.rentalPeriod;
     }
   }
 
@@ -76,6 +85,39 @@ class _LandlordPropertyDetailsPageState
 
     return null;
   }
+
+  String get _priceLabel {
+    if (_purpose == LandlordPropertyPurpose.sale) return 'Preço de venda';
+    if (_rentalPeriod == LandlordRentalPeriod.daily) return 'Preço por diária';
+    if (_rentalPeriod == LandlordRentalPeriod.monthly) return 'Preço mensal';
+    return 'Preço do imóvel';
+  }
+
+  String get _priceHint {
+    if (_purpose == LandlordPropertyPurpose.sale) return 'Ex.: 250.000,00';
+    if (_rentalPeriod == LandlordRentalPeriod.daily) return 'Ex.: 350,00';
+    if (_rentalPeriod == LandlordRentalPeriod.monthly) return 'Ex.: 1.500,00';
+    return 'Informe o valor';
+  }
+
+  InputDecoration _dropdownDecoration(String label) => InputDecoration(
+    labelText: label,
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(20),
+      borderSide: const BorderSide(color: _almond),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(20),
+      borderSide: const BorderSide(color: _almond),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(20),
+      borderSide: const BorderSide(color: _wine, width: 1.5),
+    ),
+  );
 
   Widget _buildField({
     required String label,
@@ -159,32 +201,45 @@ class _LandlordPropertyDetailsPageState
     );
   }
 
-  void _continue() {
+  Future<void> _continue() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     final normalizedPrice = _priceController.text.replaceAll(',', '.');
     final property = LandlordPropertyDraft(
+      id: widget.initialProperty?.id,
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
       address: widget.address,
-      pricePerNight: double.parse(normalizedPrice),
+      price: double.parse(normalizedPrice),
       photos: List.unmodifiable(widget.photos),
       mainPhotoIndex: widget.mainPhotoIndex,
+      type: _type!,
+      purpose: _purpose!,
+      rentalPeriod: _purpose == LandlordPropertyPurpose.rental
+          ? _rentalPeriod
+          : null,
       status: _status,
     );
 
     final onPropertyCreated = widget.onPropertyCreated;
     if (onPropertyCreated != null) {
-      onPropertyCreated(property);
+      setState(() => _isSaving = true);
+      try {
+        await onPropertyCreated(property);
+      } on LandlordPropertyApiException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(error.message)));
+        }
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Cadastro de demonstração concluído. A publicação ainda não está integrada.',
-        ),
-      ),
+      const SnackBar(content: Text('Cadastro de demonstração concluído.')),
     );
   }
 
@@ -243,8 +298,8 @@ class _LandlordPropertyDetailsPageState
                 const SizedBox(height: 5),
                 Text(
                   _isEditing
-                      ? 'Atualize as informações do seu imóvel de demonstração.'
-                      : 'Conte o que torna sua hospedagem especial.',
+                      ? 'Atualize as informações do seu imóvel.'
+                      : 'Informe as características e os valores do imóvel.',
                   style: TextStyle(
                     color: Color(0xFFE8D3C3),
                     fontSize: 13,
@@ -278,6 +333,22 @@ class _LandlordPropertyDetailsPageState
                       validator: _required,
                     ),
                     const SizedBox(height: 16),
+                    DropdownButtonFormField<LandlordPropertyType>(
+                      initialValue: _type,
+                      decoration: _dropdownDecoration('Tipo do imóvel'),
+                      validator: (value) =>
+                          value == null ? 'Selecione o tipo do imóvel' : null,
+                      items: LandlordPropertyType.values
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (type) => setState(() => _type = type),
+                    ),
+                    const SizedBox(height: 16),
                     _buildField(
                       label: 'Descrição do imóvel',
                       hint:
@@ -287,6 +358,59 @@ class _LandlordPropertyDetailsPageState
                       maxLines: 5,
                       helperText: 'Uma descrição clara ajuda seus hóspedes.',
                     ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'FINALIDADE',
+                      style: TextStyle(
+                        color: _wine,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<LandlordPropertyPurpose>(
+                      initialValue: _purpose,
+                      decoration: _dropdownDecoration('Finalidade'),
+                      validator: (value) =>
+                          value == null ? 'Selecione a finalidade' : null,
+                      items: LandlordPropertyPurpose.values
+                          .map(
+                            (purpose) => DropdownMenuItem(
+                              value: purpose,
+                              child: Text(purpose.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (purpose) {
+                        setState(() {
+                          _purpose = purpose;
+                          _rentalPeriod =
+                              purpose == LandlordPropertyPurpose.rental
+                              ? (_rentalPeriod ?? LandlordRentalPeriod.daily)
+                              : null;
+                        });
+                      },
+                    ),
+                    if (_purpose == LandlordPropertyPurpose.rental) ...[
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<LandlordRentalPeriod>(
+                        initialValue: _rentalPeriod,
+                        decoration: _dropdownDecoration('Período de locação'),
+                        validator: (value) => value == null
+                            ? 'Selecione o período de locação'
+                            : null,
+                        items: LandlordRentalPeriod.values
+                            .map(
+                              (period) => DropdownMenuItem(
+                                value: period,
+                                child: Text(period.label),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (period) =>
+                            setState(() => _rentalPeriod = period),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     const Text(
                       'STATUS DO IMÓVEL',
@@ -392,8 +516,8 @@ class _LandlordPropertyDetailsPageState
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'PREÇO DA ESTADIA',
+                    Text(
+                      _priceLabel.toUpperCase(),
                       style: TextStyle(
                         color: _wine,
                         fontSize: 14,
@@ -402,8 +526,8 @@ class _LandlordPropertyDetailsPageState
                     ),
                     const SizedBox(height: 16),
                     _buildField(
-                      label: 'Preço por noite',
-                      hint: 'Ex.: 350,00',
+                      label: _priceLabel,
+                      hint: _priceHint,
                       controller: _priceController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -428,26 +552,35 @@ class _LandlordPropertyDetailsPageState
                           ),
                         ),
                       ),
-                      helperText: 'Valor de exemplo para demonstração; ainda não será publicado.',
+                      helperText: 'O valor será exibido conforme a finalidade selecionada.',
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
                       height: 52,
                       child: FilledButton(
-                        onPressed: _continue,
+                        onPressed: _isSaving ? null : _continue,
                         style: FilledButton.styleFrom(
                           backgroundColor: _wine,
                           shape: const StadiumBorder(),
                         ),
-                        child: Text(
-                          _isEditing
-                              ? 'Salvar alterações'
-                              : 'Concluir cadastro',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                _isEditing
+                                    ? 'Salvar alterações'
+                                    : 'Concluir cadastro',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                       ),
                     ),
                   ],

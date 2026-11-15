@@ -81,6 +81,7 @@ void main() {
   LandlordPropertyDraft makeExampleProperty({
     String name = 'Casa do Centro',
     LandlordPropertyStatus status = LandlordPropertyStatus.available,
+    double price = 350,
   }) => LandlordPropertyDraft(
     name: name,
     description: 'Casa arejada com quintal.',
@@ -91,8 +92,8 @@ void main() {
       number: '123',
       complement: '',
     ),
-    pricePerNight: 350,
-    photos: [_smallPng],
+    price: price,
+    photos: [LandlordPropertyPhoto.local(bytes: _smallPng)],
     mainPhotoIndex: 0,
     status: status,
   );
@@ -186,7 +187,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.text('A ordenação ficará disponível quando houver imóveis.'),
-      findsOneWidget,
+      findsNothing,
+    );
+  });
+
+  testWidgets('filters properties and sorts the visible results', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LandlordPropertiesPage(
+          userName: 'Amanda',
+          onItemSelecionado: (_) {},
+          onAdicionarImovel: (_) {},
+          properties: [
+            makeExampleProperty(name: 'Casa mais cara', price: 500),
+            makeExampleProperty(name: 'Apartamento', price: 200),
+            makeExampleProperty(name: 'Casa mais barata', price: 100),
+          ],
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'casa');
+    await tester.pumpAndSettle();
+    expect(find.text('Casa mais cara'), findsOneWidget);
+    expect(find.text('Casa mais barata'), findsOneWidget);
+    expect(find.text('Apartamento'), findsNothing);
+
+    await tester.tap(find.text('Ordenar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Menor preço'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Casa mais barata')).dy,
+      lessThan(tester.getTopLeft(find.text('Casa mais cara')).dy),
     );
   });
 
@@ -291,7 +327,7 @@ void main() {
 
     expect(find.text('Casa atualizada'), findsOneWidget);
     expect(find.text('Casa do Centro'), findsNothing);
-    expect(find.text('Imóvel de exemplo atualizado.'), findsOneWidget);
+    expect(find.text('Imóvel atualizado com sucesso.'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Editar imóvel'));
     await tester.tap(find.text('Editar imóvel'));

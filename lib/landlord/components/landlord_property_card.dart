@@ -22,6 +22,15 @@ class LandlordPropertyCard extends StatelessWidget {
     LandlordPropertyStatus.unavailable => const Color(0xFF666666),
   };
 
+  String get _priceUnit {
+    if (property.purpose == LandlordPropertyPurpose.sale) return ' total';
+    return switch (property.rentalPeriod) {
+      LandlordRentalPeriod.daily => ' / diária',
+      LandlordRentalPeriod.monthly => ' / mês',
+      null => '',
+    };
+  }
+
   @override
   Widget build(BuildContext context) => Container(
     key: ValueKey('landlord-property-${property.name}'),
@@ -47,11 +56,7 @@ class LandlordPropertyCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.memory(
-                property.mainPhoto,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _imagePlaceholder(),
-              ),
+              _buildMainPhoto(),
               Positioned(
                 top: 7,
                 left: 7,
@@ -104,16 +109,19 @@ class LandlordPropertyCard extends StatelessWidget {
                   children: [
                     TextSpan(
                       text:
-                          'R\$ ${property.pricePerNight.toStringAsFixed(2).replaceAll('.', ',')}',
+                          'R\$ ${property.price.toStringAsFixed(2).replaceAll('.', ',')}',
                       style: const TextStyle(
                         color: _wine,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
                     ),
-                    const TextSpan(
-                      text: ' / noite',
-                      style: TextStyle(color: Colors.black54, fontSize: 12),
+                    TextSpan(
+                      text: _priceUnit,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -168,6 +176,28 @@ class LandlordPropertyCard extends StatelessWidget {
       ],
     ),
   );
+
+  Widget _buildMainPhoto() {
+    final photo = property.mainPhoto;
+    if (photo == null) return _imagePlaceholder();
+
+    final bytes = photo.bytes;
+    if (bytes != null) {
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _imagePlaceholder(),
+      );
+    }
+
+    final url = photo.url;
+    if (url == null || url.isEmpty) return _imagePlaceholder();
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _imagePlaceholder(),
+    );
+  }
 
   Widget _imagePlaceholder() => Container(
     width: double.infinity,

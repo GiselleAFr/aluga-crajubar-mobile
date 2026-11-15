@@ -141,6 +141,61 @@ class AuthService {
     return _saveAuthenticatedResponse(data);
   }
 
+  Future<void> submitLandlordRequest({
+    required String fullName,
+    required String cpf,
+    required DateTime birthDate,
+    required String documentType,
+    required String email,
+    required String primaryPhone,
+    required String secondaryPhone,
+    required String commercialPhone,
+    required Uint8List documentFrontBytes,
+    required String documentFrontFileName,
+    required Uint8List documentBackBytes,
+    required String documentBackFileName,
+  }) async {
+    if (await accessToken == _demoAccessToken) {
+      throw const AuthException(
+        'A conta de demonstração não pode enviar uma solicitação de locador.',
+      );
+    }
+
+    final response = await _request(
+      'POST',
+      '/landlord-request',
+      authenticated: true,
+      multipartFields: {
+        'full_name': fullName.trim(),
+        'cpf': cpf.trim(),
+        'birth_date': birthDate.toIso8601String().split('T').first,
+        'document_type': documentType,
+        'email': email.trim(),
+        'primary_phone': primaryPhone.trim(),
+        'secondary_phone': secondaryPhone.trim(),
+        'commercial_phone': commercialPhone.trim(),
+      },
+      files: [
+        _documentMultipartFile(
+          'document_front',
+          documentFrontFileName,
+          documentFrontBytes,
+        ),
+        _documentMultipartFile(
+          'document_back',
+          documentBackFileName,
+          documentBackBytes,
+        ),
+      ],
+    );
+    final request = response['data'];
+    if (request is! Map<String, dynamic> || request['status'] != 'pending') {
+      throw const AuthException(
+        'Resposta inválida ao enviar a solicitação de locador.',
+      );
+    }
+  }
+
   Future<AuthUser> currentUser() async {
     final token = await _storage.read(key: _tokenKey);
     if (token == _demoAccessToken) {
@@ -274,6 +329,8 @@ class AuthService {
     String method,
     String path, {
     Map<String, dynamic>? body,
+    Map<String, String>? multipartFields,
+    List<http.MultipartFile>? files,
     bool authenticated = false,
     Map<String, String>? queryParameters,
   }) async {
@@ -299,8 +356,21 @@ class AuthService {
     }
 
     try {
-      final request = http.Request(method, uri)..headers.addAll(headers);
-      if (body != null) request.body = jsonEncode(body);
+      final http.BaseRequest request;
+      if (files != null) {
+        if (body != null) {
+          throw StateError('A request cannot use JSON and multipart bodies.');
+        }
+        final multipartRequest = http.MultipartRequest(method, uri)
+          ..headers.addAll(headers)
+          ..fields.addAll(multipartFields ?? const {});
+        multipartRequest.files.addAll(files);
+        request = multipartRequest;
+      } else {
+        final jsonRequest = http.Request(method, uri)..headers.addAll(headers);
+        if (body != null) jsonRequest.body = jsonEncode(body);
+        request = jsonRequest;
+      }
 
       final streamedResponse = await _client
           .send(request)
@@ -335,6 +405,32 @@ class AuthService {
     } on FormatException {
       throw const AuthException('A API retornou uma resposta inválida.');
     }
+  }
+
+  http.MultipartFile _documentMultipartFile(
+    String field,
+    String fileName,
+    Uint8List bytes,
+  ) {
+    const allowedExtensions = {'jpg', 'jpeg', 'png'};
+    const maxFileSizeBytes = 10 * 1024 * 1024;
+    final extension = fileName.split('.').last.toLowerCase();
+
+    if (!fileName.contains('.') || !allowedExtensions.contains(extension)) {
+      throw const AuthException('Selecione imagens JPG ou PNG.');
+    }
+    if (bytes.isEmpty) {
+      throw const AuthException('O arquivo selecionado está vazio.');
+    }
+    if (bytes.length > maxFileSizeBytes) {
+      throw const AuthException('Cada imagem pode ter no máximo 10 MB.');
+    }
+
+    return http.MultipartFile.fromBytes(
+      field,
+      bytes,
+      filename: '$field.$extension',
+    );
   }
 
   Map<String, String> _fieldErrors(Map<String, dynamic> data) {

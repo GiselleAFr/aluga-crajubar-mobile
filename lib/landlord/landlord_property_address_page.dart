@@ -15,7 +15,8 @@ class LandlordPropertyAddressPage extends StatefulWidget {
   });
 
   final ValueChanged<int> onItemSelecionado;
-  final ValueChanged<LandlordPropertyDraft>? onPropertyCreated;
+  final Future<void> Function(LandlordPropertyDraft property)?
+  onPropertyCreated;
 
   @override
   State<LandlordPropertyAddressPage> createState() =>

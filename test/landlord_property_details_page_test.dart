@@ -18,34 +18,33 @@ void main() {
   );
 
   Widget buildTestApp({
-    ValueChanged<LandlordPropertyDraft>? onPropertyCreated,
+    Future<void> Function(LandlordPropertyDraft property)? onPropertyCreated,
   }) => MaterialApp(
     home: LandlordPropertyDetailsPage(
       address: address,
-      photos: [_photo],
+      photos: [LandlordPropertyPhoto.local(bytes: _photo)],
       mainPhotoIndex: 0,
       onPropertyCreated: onPropertyCreated,
     ),
   );
 
-  testWidgets('shows description, location, and a demonstration price field', (
+  testWidgets('shows property fields and adjusts the price by purpose', (
     tester,
   ) async {
     await tester.pumpWidget(buildTestApp());
 
     expect(find.text('Etapa 5 de 5'), findsOneWidget);
     expect(find.text('Nome do imóvel'), findsOneWidget);
+    expect(find.text('Tipo do imóvel'), findsOneWidget);
     expect(find.text('Descrição do imóvel'), findsOneWidget);
+    expect(find.text('Finalidade'), findsOneWidget);
     expect(
       find.text('Centro · Rua do Comércio, 123, Apto 2 · Crato'),
       findsOneWidget,
     );
-    expect(find.text('Preço por noite'), findsOneWidget);
-    expect(find.text('Ex.: 350,00'), findsOneWidget);
-    expect(
-      find.textContaining('Valor de exemplo para demonstração'),
-      findsOneWidget,
-    );
+    expect(find.text('Preço do imóvel'), findsOneWidget);
+    expect(find.text('Informe o valor'), findsOneWidget);
+    expect(find.textContaining('O valor será exibido'), findsOneWidget);
     expect(
       tester
           .widgetList<TextFormField>(find.byType(TextFormField))
@@ -54,14 +53,45 @@ void main() {
           .text,
       isEmpty,
     );
+
+    final purposeField = find.byType(
+      DropdownButtonFormField<LandlordPropertyPurpose>,
+    );
+    await tester.ensureVisible(purposeField);
+    await tester.tap(purposeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Venda').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Preço de venda'), findsOneWidget);
+    expect(
+      find.byType(DropdownButtonFormField<LandlordRentalPeriod>),
+      findsNothing,
+    );
+
+    await tester.tap(purposeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aluguel').last);
+    await tester.pumpAndSettle();
+    final periodField = find.byType(
+      DropdownButtonFormField<LandlordRentalPeriod>,
+    );
+    await tester.tap(periodField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mensal').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Preço mensal'), findsOneWidget);
   });
 
-  testWidgets('validates details and price without publishing the listing', (
+  testWidgets('validates and returns all required property fields', (
     tester,
   ) async {
     LandlordPropertyDraft? createdProperty;
     await tester.pumpWidget(
-      buildTestApp(onPropertyCreated: (property) => createdProperty = property),
+      buildTestApp(
+        onPropertyCreated: (property) async {
+          createdProperty = property;
+        },
+      ),
     );
 
     final continueButton = find.widgetWithText(
@@ -74,12 +104,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Campo obrigatório'), findsNWidgets(3));
+    expect(find.text('Selecione o tipo do imóvel'), findsOneWidget);
+    expect(find.text('Selecione a finalidade'), findsOneWidget);
 
     final fields = tester.widgetList<TextFormField>(find.byType(TextFormField));
     fields.elementAt(0).controller!.text = 'Casa de exemplo';
     fields.elementAt(1).controller!.text =
         'Casa arejada com quintal e cozinha equipada.';
     fields.elementAt(2).controller!.text = '350,00';
+
+    final typeField = find.byType(
+      DropdownButtonFormField<LandlordPropertyType>,
+    );
+    await tester.ensureVisible(typeField);
+    await tester.tap(typeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Casa').last);
+    await tester.pumpAndSettle();
+
+    final purposeField = find.byType(
+      DropdownButtonFormField<LandlordPropertyPurpose>,
+    );
+    await tester.ensureVisible(purposeField);
+    await tester.tap(purposeField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Aluguel').last);
+    await tester.pumpAndSettle();
+
     await tester.ensureVisible(continueButton);
     await tester.pumpAndSettle();
     await tester.tap(continueButton);
@@ -94,8 +145,11 @@ void main() {
       'Casa arejada com quintal e cozinha equipada.',
     );
     expect(createdProperty!.address, address);
-    expect(createdProperty!.pricePerNight, 350);
-    expect(createdProperty!.photos, [_photo]);
+    expect(createdProperty!.price, 350);
+    expect(createdProperty!.type, LandlordPropertyType.house);
+    expect(createdProperty!.purpose, LandlordPropertyPurpose.rental);
+    expect(createdProperty!.rentalPeriod, LandlordRentalPeriod.daily);
+    expect(createdProperty!.photos.single.bytes, _photo);
     expect(createdProperty!.mainPhotoIndex, 0);
   });
 }
