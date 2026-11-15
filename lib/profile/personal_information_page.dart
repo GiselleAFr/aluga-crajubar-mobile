@@ -159,7 +159,7 @@ class _PersonalInformationPageState extends State<PersonalInformationPage> {
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.white,
     appBar: AppBar(
-      backgroundColor: _vinho,
+      backgroundColor: Color(0xFFA83232),
       surfaceTintColor: Colors.white,
       centerTitle: true,
       title: const Text(

@@ -195,6 +195,7 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
+        color: const Color(0xFFA83232),
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
@@ -214,8 +215,8 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
               visualDensity: VisualDensity.compact,
               icon: const Icon(
                 Icons.arrow_back,
-                color: Color(0xFFA83232),
-                size: 16,
+                color: Colors.white,
+                size: 26,
               ),
               tooltip: 'Voltar',
             ),
@@ -225,8 +226,8 @@ class _BecomeHostPageState extends State<BecomeHostPage> {
               'Tornar-se Locador',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF1A1A1A),
-                fontSize: 18,
+                color: Colors.white,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
             ),

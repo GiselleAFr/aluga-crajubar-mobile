@@ -207,7 +207,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       appBar: AppBar(
         title: const Text('Notificações'),
         centerTitle: true,
-        backgroundColor: _vinho,
+        backgroundColor: Color(0xFFA83232),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
