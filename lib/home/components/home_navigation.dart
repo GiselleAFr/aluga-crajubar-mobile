@@ -53,7 +53,7 @@ class HomeBottomNavigation extends StatelessWidget {
                                 Icons.home_outlined,
                                 size: 21,
                                 color: indiceSelecionado == item.$1
-                                    ? const Color(0xFF963333)
+                                    ? const Color(0xFFA83232)
                                     : Colors.grey,
                               ),
                               Positioned(
@@ -63,7 +63,7 @@ class HomeBottomNavigation extends StatelessWidget {
                                   Icons.lock_outline,
                                   size: 10,
                                   color: indiceSelecionado == item.$1
-                                      ? const Color(0xFF963333)
+                                      ? const Color(0xFFA83232)
                                       : Colors.grey,
                                 ),
                               ),
@@ -74,7 +74,7 @@ class HomeBottomNavigation extends StatelessWidget {
                             item.$2,
                             size: 21,
                             color: indiceSelecionado == item.$1
-                                ? const Color(0xFF963333)
+                                ? const Color(0xFFA83232)
                                 : Colors.grey,
                           ),
                         const SizedBox(height: 3),
@@ -83,7 +83,7 @@ class HomeBottomNavigation extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             color: indiceSelecionado == item.$1
-                                ? const Color(0xFF963333)
+                                ? const Color(0xFFA83232)
                                 : Colors.grey,
                             fontWeight: indiceSelecionado == item.$1
                                 ? FontWeight.bold

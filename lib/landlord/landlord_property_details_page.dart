@@ -29,8 +29,8 @@ class LandlordPropertyDetailsPage extends StatefulWidget {
 
 class _LandlordPropertyDetailsPageState
     extends State<LandlordPropertyDetailsPage> {
-  static const _wine = Color(0xFF943131);
-  static const _almond = Color(0xFFD9BDA6);
+  static const _wine = Color(0xFFA83232);
+  static const _almond = Color(0xFFE8BDBD);
   static const _muted = Color(0xFF666666);
 
   final _formKey = GlobalKey<FormState>();
@@ -257,7 +257,7 @@ class _LandlordPropertyDetailsPageState
               color: _wine,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x14943131),
+                  color: Color(0x14A83232),
                   blurRadius: 18,
                   offset: Offset(0, 8),
                 ),
@@ -301,7 +301,7 @@ class _LandlordPropertyDetailsPageState
                       ? 'Atualize as informações do seu imóvel.'
                       : 'Informe as características e os valores do imóvel.',
                   style: TextStyle(
-                    color: Color(0xFFE8D3C3),
+                    color: Color(0xFFF7DADA),
                     fontSize: 13,
                     height: 1.4,
                   ),

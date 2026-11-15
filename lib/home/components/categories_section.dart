@@ -20,7 +20,7 @@ class CategoriesSection extends StatelessWidget {
         const Text(
           'CATEGORIAS',
           style: TextStyle(
-            color: Color(0xFF963333),
+            color: Color(0xFFA83232),
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -39,7 +39,7 @@ class CategoriesSection extends StatelessWidget {
               value: 'Casas e Apartamentos',
               icon: const Icon(
                 Icons.keyboard_arrow_down,
-                color: Color(0xFF963333),
+                color: Color(0xFFA83232),
               ),
               items: const [
                 DropdownMenuItem(
@@ -48,7 +48,7 @@ class CategoriesSection extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.home_outlined,
-                        color: Color(0xFF963333),
+                        color: Color(0xFFA83232),
                         size: 18,
                       ),
                       SizedBox(width: 10),
@@ -103,10 +103,10 @@ class CategoriesSection extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                         backgroundColor: Colors.white,
-                        selectedColor: const Color(0xFF963333),
+                        selectedColor: const Color(0xFFA83232),
                         side: BorderSide(
                           color: selected
-                              ? const Color(0xFF963333)
+                              ? const Color(0xFFA83232)
                               : const Color(0xFFE8D8D1),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 5),

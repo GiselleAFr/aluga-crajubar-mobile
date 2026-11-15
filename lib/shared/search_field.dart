@@ -33,7 +33,7 @@ class SearchField extends StatelessWidget {
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
         prefixIcon: const Icon(
           Icons.search,
-          color: Color(0xFF963333),
+          color: Color(0xFFA83232),
           size: 20,
         ),
         // Botão de limpar, só quando há texto.

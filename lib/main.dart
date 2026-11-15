@@ -10,6 +10,8 @@ import 'login/recovery/recovery.dart';
 import 'shared/app_scroll_behavior.dart';
 
 final appNavigatorKey = GlobalKey<NavigatorState>();
+const _loginRed = Color(0xFFA83232);
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MeuApp());
@@ -72,7 +74,8 @@ class _MeuAppState extends State<MeuApp> {
       useMaterial3: true,
       fontFamily: 'Roboto',
       scaffoldBackgroundColor: const Color(0xFFF8F7F5),
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF963333)),
+      colorScheme: ColorScheme.fromSeed(seedColor: _loginRed)
+          .copyWith(primary: _loginRed),
     );
 
     return MaterialApp(

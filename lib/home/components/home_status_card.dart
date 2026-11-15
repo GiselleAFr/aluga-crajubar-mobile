@@ -48,7 +48,7 @@ class HomeStatusCard extends StatelessWidget {
       HomeStatusType.landlordPending => (
         Icons.inbox_outlined,
         const Color(0xFFF6E3DE),
-        const Color(0xFF963333),
+        const Color(0xFFA83232),
         n == 1 ? '1 solicitação pendente' : '$n solicitações pendentes',
         'Responda aos hóspedes interessados nos seus imóveis.',
         'Ver solicitações',

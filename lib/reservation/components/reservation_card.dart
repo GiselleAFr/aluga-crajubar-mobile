@@ -70,7 +70,7 @@ class ReservationCard extends StatelessWidget {
                 const Icon(
                   Icons.calendar_month_outlined,
                   size: 17,
-                  color: Color(0xFF963333),
+                  color: Color(0xFFA83232),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
@@ -88,7 +88,7 @@ class ReservationCard extends StatelessWidget {
                 const Icon(
                   Icons.people_outline,
                   size: 17,
-                  color: Color(0xFF963333),
+                  color: Color(0xFFA83232),
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -101,7 +101,7 @@ class ReservationCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF963333),
+                    color: Color(0xFFA83232),
                   ),
                 ),
               ],

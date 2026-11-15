@@ -52,7 +52,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   /// Quantas hospedagens aparecem no perfil antes do "Ver todos".
   static const _limiteHistorico = 5;

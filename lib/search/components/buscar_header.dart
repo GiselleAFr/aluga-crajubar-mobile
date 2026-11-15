@@ -13,7 +13,7 @@ class BuscarHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 18, 12, 16),
       decoration: const BoxDecoration(
-        color: Color(0xFF963333),
+        color: Color(0xFFA83232),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
       ),
       child: ResponsiveContent(

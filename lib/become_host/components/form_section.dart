@@ -9,13 +9,14 @@ class FormSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleColor = Theme.of(context).colorScheme.primary;
+    final borderColor = titleColor.withValues(alpha: 0.3);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFD9BDA6)),
+        border: Border.all(color: borderColor),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(

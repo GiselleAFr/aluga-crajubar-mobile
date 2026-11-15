@@ -28,7 +28,7 @@ class PropertyCard extends StatelessWidget {
     width: double.infinity,
     color: const Color(0xFFE5DAD3),
     child: const Center(
-      child: Icon(Icons.home_work_outlined, size: 35, color: Color(0xFF963333)),
+      child: Icon(Icons.home_work_outlined, size: 35, color: Color(0xFFA83232)),
     ),
   );
 
@@ -143,7 +143,7 @@ class PropertyCard extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     style: const TextStyle(
-                      color: Color(0xFF963333),
+                      color: Color(0xFFA83232),
                       fontSize: 14,
                     ),
                     children: [
@@ -171,7 +171,7 @@ class PropertyCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onReservarPressed,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF963333),
+                      backgroundColor: const Color(0xFFA83232),
                       foregroundColor: Colors.white,
                       padding: EdgeInsets.zero,
                       elevation: 0,

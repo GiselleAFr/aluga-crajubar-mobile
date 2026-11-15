@@ -13,7 +13,7 @@ class HelpPage extends StatefulWidget {
 }
 
 class _HelpPageState extends State<HelpPage> {
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
   static const _borda = Color(0xFFE8D8D1);
 
   final TextEditingController _busca = TextEditingController();
@@ -367,7 +367,7 @@ class _FaqTile extends StatelessWidget {
   final bool aberta;
   final VoidCallback onToggle;
 
-  static const _vinho = Color(0xFF963333);
+  static const _vinho = Color(0xFFA83232);
 
   @override
   Widget build(BuildContext context) {
