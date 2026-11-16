@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../home/models/property.dart';
+import '../reservation/components/location_map.dart';
 import '../reservation/reservation_request_page.dart';
 import '../utils/external_links.dart';
 import 'components/property_info_sections.dart';
@@ -17,6 +18,67 @@ class PropertyDetailsPage extends StatelessWidget {
       MaterialPageRoute(
         builder: (_) => ReservationRequestPage(property: property),
       ),
+    );
+  }
+
+  Widget _buildLocalizacao(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Localização',
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        if (property.hasCoordinates) ...[
+          LocationMap(
+            latitude: property.latitude!,
+            longitude: property.longitude!,
+            // A página rola: um dedo sobre o mapa rola a página.
+            permitirArrastar: false,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => ExternalLinks.openMaps(
+                context,
+                property.latitude!,
+                property.longitude!,
+              ),
+              icon: const Icon(Icons.map_outlined),
+              label: const Text('Abrir no Google Maps'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _primary,
+                side: const BorderSide(color: _primary),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ] else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.location_off_outlined, size: 42, color: Colors.grey),
+                SizedBox(height: 10),
+                Text(
+                  'A localização deste imóvel ainda não está disponível.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -101,6 +163,8 @@ class PropertyDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   PropertyInfoSections(property: property),
+                  const SizedBox(height: 28),
+                  _buildLocalizacao(context),
                   const SizedBox(height: 16),
                 ],
               ),

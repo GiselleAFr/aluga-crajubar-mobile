@@ -14,11 +14,16 @@ class LocationMap extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     this.height = 240,
+    this.permitirArrastar = true,
   });
 
   final double latitude;
   final double longitude;
   final double height;
+
+  /// Em telas com rolagem, use false: arrastar com um dedo sobre o mapa
+  /// rola a página (o zoom com dois dedos continua funcionando).
+  final bool permitirArrastar;
 
   @override
   State<LocationMap> createState() => _LocationMapState();
@@ -50,7 +55,15 @@ class _LocationMapState extends State<LocationMap> {
         child: Stack(
           children: [
             FlutterMap(
-              options: MapOptions(initialCenter: ponto, initialZoom: 15),
+              options: MapOptions(
+                initialCenter: ponto,
+                initialZoom: 15,
+                interactionOptions: InteractionOptions(
+                  flags: widget.permitirArrastar
+                      ? InteractiveFlag.all & ~InteractiveFlag.rotate
+                      : InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
+                ),
+              ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -103,7 +116,7 @@ class _LocationMapState extends State<LocationMap> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'O mapa não carregou. Use “Ver rota no Google Maps” '
+                          'O mapa não carregou. Use o botão do Google Maps '
                           'para abrir o local.',
                           style: TextStyle(fontSize: 12, height: 1.3),
                         ),
